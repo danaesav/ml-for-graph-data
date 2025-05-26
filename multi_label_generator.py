@@ -76,14 +76,14 @@ class MultiLabelGenerator:
     .. _Tomas et al.: https://arxiv.org/pdf/2304.10398
     """
 
-    def __init__(self, config:MultiLabelGeneratorConfig):
+    def __init__(self, config):
 
         self.set_config(config)
 
         
 
     @staticmethod
-    def parameter_feasibility_check(config:MultiLabelGeneratorConfig):
+    def parameter_feasibility_check(config):
         assert config.m_rel > 0
         assert config.m_irr >= 0
         assert config.m_red >= 0
@@ -94,14 +94,13 @@ class MultiLabelGenerator:
         assert config.mu >= 0
         assert config.m_red <= config.m_rel
         assert config.min_r < config.max_r and config.max_r <= 0.8
-        # print(config.q/10 + 1)
         # assert config.min_r <= np.floor_divide(config.q/10 + 1 , config.q), f"{config.min_r} <= {np.floor_divide(config.q/10 + 1 , config.q)}"
         assert config.min_r <= np.divide(config.q/10 + 1 , config.q)
         assert config.b > 0
         assert config.alpha >= 0
 
 
-    def set_config(self, config:MultiLabelGeneratorConfig):
+    def set_config(self, config):
         self.parameter_feasibility_check(config)
 
         # Tomas et al. Parameters
@@ -116,7 +115,8 @@ class MultiLabelGenerator:
         self.max_r = config.max_r
         self.min_r = config.min_r
         self.mu = config.mu
-    
+
+        # Zhao et al. Parameters
         self.b = config.b
         self.alpha = config.alpha
 
@@ -190,7 +190,19 @@ class MultiLabelGenerator:
             x_rel[i] = xk
 
         # 4. Expand to M features
-        
+        x_data = self._extend_feature(x_rel)
+
+        # 5. Generate multi-labels (one-hot-encoded)
+        # 6. noisy label flips
+        y_data, y_data_noised = self._generate_labels(x_data, spheres_hs)
+
+        # 7. compute edges
+        adj_mat, edge_list = self._compute_edges(y_data)
+
+
+        return x_data, y_data, y_data_noised, spheres_hs, sphere_HS, adj_mat, edge_list
+    
+    def _extend_feature(self, x_rel):
         # sample m_irr features
         x_irr = np.random.uniform(-1, 1, size=(self.N, self.m_irr))
 
@@ -203,15 +215,7 @@ class MultiLabelGenerator:
 
         assert x_data.shape == (self.N, self.m)
 
-        # 5. Generate multi-labels (one-hot-encoded)
-        # 6. noisy label flips
-        y_data, y_data_noised = self._generate_labels(x_data, spheres_hs)
-
-        # 7. compute edges
-        adj_mat, edge_list = self._compute_edges(y_data)
-
-
-        return x_data, y_data, y_data_noised, spheres_hs, sphere_HS, adj_mat, edge_list
+        return x_data
     
 
     def _generate_labels(self, x_data, spheres_hs):
@@ -273,14 +277,19 @@ class MultiLabelGenerator:
     def hamming(self, yi, yj):
         return np.count_nonzero(yi!=yj)
 
-    def visualize(self, sphere_HS, spheres_hs, x_data, edge_list):
+    def visualize(self, sphere_HS, spheres_hs, x_data, edge_list, ax=None, legend=True):
         """
         x_data : array(N, M)
         """
         
         assert self.m_rel == 2 # only plot if 2d
 
-        fig, ax = plt.subplots()
+        if ax is None:
+            fig, ax = plt.subplots()
+            plot = True
+        else:
+            plot = False
+    
         ax.scatter(x_data[:, 0], x_data[:, 1], c='black', s=10, label='Data Points', zorder=3)
 
         #plot edges
@@ -300,11 +309,16 @@ class MultiLabelGenerator:
             ax.add_patch(circle)
         
         ax.set_aspect('equal', 'box')
-        ax.legend()
+
+        if legend:
+            ax.legend()
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
-        plt.grid(True)
-        plt.show()
+        ax.grid(True)
+
+        if plot:
+            plt.show()
+            
 
 
 if __name__ == "__main__":
@@ -323,6 +337,6 @@ if __name__ == "__main__":
     mlg = MultiLabelGenerator(config)
 
     x_data, y_data, y_data_noised, spheres_hs, sphere_HS, adj_mat, edge_list  = mlg.generate()
-    
+
     mlg.visualize(sphere_HS, spheres_hs, x_data, edge_list)
 
