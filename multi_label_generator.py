@@ -94,8 +94,9 @@ class MultiLabelGenerator:
         assert config.mu >= 0
         assert config.m_red <= config.m_rel
         assert config.min_r < config.max_r and config.max_r <= 0.8
-        assert config.min_r <= np.floor_divide(config.q/10 + 1 , config.q)
-
+        # print(config.q/10 + 1)
+        # assert config.min_r <= np.floor_divide(config.q/10 + 1 , config.q), f"{config.min_r} <= {np.floor_divide(config.q/10 + 1 , config.q)}"
+        assert config.min_r <= np.divide(config.q/10 + 1 , config.q)
         assert config.b > 0
         assert config.alpha >= 0
 
@@ -203,10 +204,24 @@ class MultiLabelGenerator:
         assert x_data.shape == (self.N, self.m)
 
         # 5. Generate multi-labels (one-hot-encoded)
+        # 6. noisy label flips
+        y_data, y_data_noised = self._generate_labels(x_data, spheres_hs)
+
+        # 7. compute edges
+        adj_mat, edge_list = self._compute_edges(y_data)
+
+
+        return x_data, y_data, y_data_noised, spheres_hs, sphere_HS, adj_mat, edge_list
+    
+
+    def _generate_labels(self, x_data, spheres_hs):
+
+        # 5. Generate multi-labels (one-hot-encoded)
         y_data = np.zeros((self.N, self.q) , dtype=bool)
 
         for i in range(self.N):
-            xi = x_rel[i]
+            # xi = x_rel[i]
+            xi = x_data[i, :self.m_rel]
 
             for j in range(self.q):
                 cj, rj = spheres_hs[j]
@@ -221,7 +236,13 @@ class MultiLabelGenerator:
         # Flip using XOR (logical exclusive or)
         y_data_noised = np.logical_xor(y_data, flip_mask)
 
-        # 7. compute edges
+        return y_data, y_data_noised
+
+
+
+
+    def _compute_edges(self, y_data):
+
         adj_mat = np.zeros((self.N, self.N), dtype=bool)
         edge_list = []
 
@@ -235,10 +256,7 @@ class MultiLabelGenerator:
                     adj_mat[j, i] = True
                     edge_list.append((i, j))
 
-
-        return x_data, y_data, y_data_noised, spheres_hs, sphere_HS, adj_mat, edge_list
-    
-
+        return adj_mat, edge_list
 
 
     def edge_prob(self, yi, yj):
@@ -246,6 +264,7 @@ class MultiLabelGenerator:
         implements equation (2) from `Zhao et al.`_
 
         .. _Zhao et al.: https://arxiv.org/pdf/2304.10398
+
         """
         return 1 / (1 + (np.power(self.hamming(yi, yj)/self.b, self.alpha)))
 
@@ -290,10 +309,20 @@ class MultiLabelGenerator:
 
 if __name__ == "__main__":
 
+    config = MultiLabelGeneratorConfig(m_rel=2, 
+                                       m_irr=0, 
+                                       m_red=0 ,
+                                       q=5, 
+                                       N=15, 
+                                       max_r=0.7, 
+                                       min_r=0.1, 
+                                       mu=0, 
+                                       b=0.1, 
+                                       alpha=16)
 
-    mlg = MultiLabelGenerator(2, 0, 0 ,5, 15, 0.7, 0.1, 0, 6, 0.1)
+    mlg = MultiLabelGenerator(config)
 
     x_data, y_data, y_data_noised, spheres_hs, sphere_HS, adj_mat, edge_list  = mlg.generate()
-
+    
     mlg.visualize(sphere_HS, spheres_hs, x_data, edge_list)
 
