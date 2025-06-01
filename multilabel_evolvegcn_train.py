@@ -51,7 +51,7 @@ def train(model, train_dataset, optimizer, loss_fn, epochs=EPOCHS):
         print(f"Epoch {epoch} | Loss: {avg_loss:.4f}")
 
 
-def evaluate(model, test_dataset, loss_fn, threshold=0.5):
+def evaluate(model, test_dataset, loss_fn, threshold=THRESHOLD):
     model.eval()
     total_loss = 0
     all_preds = []
