@@ -1,9 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-import matplotlib as mpl
-from dataclasses import dataclass, field
-from multi_label_generator import MultiLabelGenerator, MultiLabelGeneratorConfig
+from dataclasses import dataclass
+from generator.multi_label_generator import MultiLabelGenerator, MultiLabelGeneratorConfig
 
 @dataclass
 class TemporalMultiLabelGeneratorConfig(MultiLabelGeneratorConfig):

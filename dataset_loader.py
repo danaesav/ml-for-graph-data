@@ -1,13 +1,16 @@
 import numpy as np
 from torch_geometric_temporal import DynamicGraphTemporalSignal
 
-from temporal_multi_label_generator import TemporalMultiLabelGenerator, TemporalMultiLabelGeneratorConfig
+from generator.temporal_multi_label_generator import TemporalMultiLabelGenerator, TemporalMultiLabelGeneratorConfig
 
 
-class GeneratorDatasetLoader(object):
+class DatasetLoader(object):
     def __init__(self, config: TemporalMultiLabelGeneratorConfig):
         self.generator = TemporalMultiLabelGenerator(config)
         self.lags = config.horizon
+
+    # TODO: def generate_deepwalk_embeddings(self):
+    #     Generate deepwalk embeddings for each snapshot
 
     def get_dataset(self) -> DynamicGraphTemporalSignal:
         # Generate temporal data
