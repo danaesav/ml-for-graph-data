@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from sklearn.metrics import f1_score
 from torch import optim, nn
 from torch_geometric_temporal import temporal_signal_split
@@ -37,6 +38,7 @@ def initialize_model():
 
 def train(model, train_dataset, deepwalk_embeddings, optimizer, loss_fn, epochs=EPOCHS):
     model.train()
+    losses = []
     for epoch in range(epochs):
         total_loss = 0
         # DynamicGraphTemporalSignal is iterable over time snapshots
@@ -53,8 +55,9 @@ def train(model, train_dataset, deepwalk_embeddings, optimizer, loss_fn, epochs=
 
             total_loss += loss.item()
         avg_loss = total_loss / train_dataset.snapshot_count
-        print(f"Epoch {epoch} | Loss: {avg_loss:.4f}")
-
+        losses.append(avg_loss)
+        # print(f"Epoch {epoch} | Loss: {avg_loss:.4f}")
+    return losses
 
 def evaluate(model, test_dataset, loss_fn, threshold=THRESHOLD):
     model.eval()
@@ -93,5 +96,14 @@ if __name__ == "__main__":
     train_dataset, test_dataset = load_data(config)
     model, deepwalk_embeddings, optimizer, loss_fn = initialize_model()
 
-    train(model, train_dataset, deepwalk_embeddings, optimizer, loss_fn)
+    losses = train(model, train_dataset, deepwalk_embeddings, optimizer, loss_fn)
     evaluate(model, test_dataset, loss_fn)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Curve')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

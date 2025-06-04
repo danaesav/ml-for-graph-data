@@ -14,10 +14,7 @@ class DatasetLoader(object):
 
     def get_dataset(self) -> DynamicGraphTemporalSignal:
         # Generate temporal data
-        #   tx_data:          np.ndarray of shape (T, N, feat_dim)
-        #   ty_data:          np.ndarray of shape (T, N, num_labels)
-        #   t_edge_list:      list of length T; each entry is a Python list of (i,j) tuples
-        tx_data, ty_data, _, _, _, _, t_edge_list = self.generator.generate()
+        ths = self.generator.generate()
 
         # Convert edges + data into DynamicGraphTemporalSignal format
         edge_indices = []
@@ -25,9 +22,9 @@ class DatasetLoader(object):
         features = []
         targets = []
 
-        for t in range(len(tx_data)):
+        for t in range(len(ths.temporal_hyper_spheres)):
             # --- Edges ---
-            edges_t = t_edge_list[t]
+            edges_t = ths.temporal_hyper_spheres[t].edge_list
             edge_index_t = np.array(edges_t).T  # shape [2, num_edges]
             edge_indices.append(edge_index_t)
 
@@ -35,8 +32,8 @@ class DatasetLoader(object):
             edge_weights.append(np.zeros(edge_index_t.shape[1]))
 
             # --- Node features and labels ---
-            features.append(tx_data[t])
-            targets.append(ty_data[t])
+            features.append(ths.temporal_hyper_spheres[t].x_data)
+            targets.append(ths.temporal_hyper_spheres[t].y_data)
 
         # Create the PyTorch Geometric Temporal dataset
         dataset = DynamicGraphTemporalSignal(
