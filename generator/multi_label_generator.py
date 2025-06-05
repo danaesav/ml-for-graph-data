@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from scipy.spatial import distance
 
 from generator.HyperSpheres import HyperSpheres
+from generator.HyperSpheresGraph import HyperSpheresGraph
 
 
 @dataclass
@@ -122,7 +123,7 @@ class MultiLabelGenerator:
         self.b = config.b
         self.alpha = config.alpha
 
-    def generate(self):
+    def generate_hyper_spheres(self):
 
         # spheres represented as tuple(center, radius)
 
@@ -186,14 +187,19 @@ class MultiLabelGenerator:
         # 4. Expand to M features
         x_data = self._extend_feature(x_rel)
 
+        hyper_spheres = HyperSpheres(x_data, spheres_hs, sphere_HS)
+
+        return hyper_spheres
+
+    def form_graph(self, hyper_spheres: HyperSpheres):
         # 5. Generate multi-labels (one-hot-encoded)
         # 6. noisy label flips
-        y_data, y_data_noised = self._generate_labels(x_data, spheres_hs)
+        y_data, y_data_noised = self._generate_labels(hyper_spheres.x_data, hyper_spheres.spheres_hs)
 
         # 7. compute edges
         adj_mat, edge_list = self._compute_edges(y_data)
 
-        return HyperSpheres(x_data, y_data, y_data_noised, spheres_hs, sphere_HS, adj_mat, edge_list)
+        return HyperSpheresGraph(hyper_spheres, y_data, y_data_noised, adj_mat, edge_list)
 
     def _extend_feature(self, x_rel):
         # sample m_irr features
@@ -262,7 +268,7 @@ class MultiLabelGenerator:
         p = 1 / (2 * (1 + pow(pow(self.b, -1) * dist, self.alpha)))
         return p
 
-    def visualize(self, hyper_spheres: HyperSpheres, ax=None, legend=True):
+    def visualize(self, hyper_spheres_graph: HyperSpheresGraph, ax=None, legend=True):
         """
         x_data : array(N, M)
         """
@@ -275,22 +281,26 @@ class MultiLabelGenerator:
         else:
             plot = False
 
-        ax.scatter(hyper_spheres.x_data[:, 0], hyper_spheres.x_data[:, 1], c='black', s=10, label='Data Points',
+        ax.scatter(hyper_spheres_graph.hyper_spheres.x_data[:, 0], hyper_spheres_graph.hyper_spheres.x_data[:, 1],
+                   c='black', s=10, label='Data Points',
                    zorder=3)
 
         # plot edges
-        for e1, e2 in hyper_spheres.edge_list:
-            x_values = [hyper_spheres.x_data[e1, 0], hyper_spheres.x_data[e2, 0]]
-            y_values = [hyper_spheres.x_data[e1, 1], hyper_spheres.x_data[e2, 1]]
+        for e1, e2 in hyper_spheres_graph.edge_list:
+            x_values = [hyper_spheres_graph.hyper_spheres.x_data[e1, 0],
+                        hyper_spheres_graph.hyper_spheres.x_data[e2, 0]]
+            y_values = [hyper_spheres_graph.hyper_spheres.x_data[e1, 1],
+                        hyper_spheres_graph.hyper_spheres.x_data[e2, 1]]
             ax.plot(x_values, y_values, 'k-', linewidth=1)
 
         cmap = mpl.colormaps['Paired']  # or 'tab20', 'Set1', etc.
 
-        circle_HS = Circle(tuple(hyper_spheres.sphere_HS[0]), hyper_spheres.sphere_HS[1], color='gray', fill=False,
+        circle_HS = Circle(tuple(hyper_spheres_graph.hyper_spheres.sphere_HS[0]),
+                           hyper_spheres_graph.hyper_spheres.sphere_HS[1], color='gray', fill=False,
                            linewidth=3)
         ax.add_patch(circle_HS)
 
-        for i, ((x, y), r) in enumerate(hyper_spheres.spheres_hs):
+        for i, ((x, y), r) in enumerate(hyper_spheres_graph.hyper_spheres.spheres_hs):
             color = cmap(i % cmap.N)  # loop through colormap if more than N
             circle = Circle((x, y), r, color=color, fill=False, linewidth=2, label=f'Circle {i + 1}')
             ax.add_patch(circle)
@@ -321,5 +331,6 @@ if __name__ == "__main__":
 
     mlg = MultiLabelGenerator(config)
 
-    hyper_spheres = mlg.generate()
-    mlg.visualize(hyper_spheres)
+    hyper_spheres = mlg.generate_hyper_spheres()
+    hyper_spheres_graph = mlg.form_graph(hyper_spheres)
+    mlg.visualize(hyper_spheres_graph)

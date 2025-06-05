@@ -1,10 +1,10 @@
 import pickle
-from generator import HyperSpheres
+from generator import HyperSpheresGraph
 from generator.utils import jaccard_similarity
 
 
 class TemporalHyperSpheres:
-    def __init__(self, temporal_hyper_spheres: [HyperSpheres]):
+    def __init__(self, temporal_hyper_spheres: [HyperSpheresGraph]):
         self.temporal_hyper_spheres = temporal_hyper_spheres
 
     def save_to_file(self, filename):

@@ -1,41 +1,66 @@
+import os
+
 import numpy as np
 from matplotlib import pyplot as plt
 
+from generator.HyperSpheres import HyperSpheres
 from generator.temporal_multi_label_generator import TemporalMultiLabelGeneratorConfig, TemporalMultiLabelGenerator
 
-alphas = range(0, 16)
+HORIZON = 5
+NUM_LABELS = 20
+alphas = range(0, 17)
+filename = f"../data/base_hyper_spheres"
+
 intra_homophily_mean = []
 intra_homophily_std = []
 inter_homophily = []
-for alpha in alphas:
-    config = TemporalMultiLabelGeneratorConfig(m_rel=10,
-                                               m_irr=10,
-                                               m_red=0,
-                                               q=20,
-                                               N=500,
-                                               max_r=0.8,
-                                               min_r=((20 / 10) + 1) / 20,
-                                               mu=0,
-                                               b=0.05,
-                                               alpha=alpha,
-                                               theta=np.pi / 7,
-                                               horizon=15
-                                               )
-    tmlg = TemporalMultiLabelGenerator(config)
+intra_homophily = []
+for h in range(HORIZON + 1):
+    intra_homophily.append([])
 
-    temporal_hyper_spheres = tmlg.generate()
-    temporal_hyper_spheres.save_to_file(f"../data/temporal_hyper_spheres_alpha_{alpha}")
+tmgc_config = TemporalMultiLabelGeneratorConfig(m_rel=10,
+                                                m_irr=10,
+                                                m_red=0,
+                                                q=NUM_LABELS,
+                                                N=500,
+                                                max_r=0.8,
+                                                min_r=((NUM_LABELS / 10) + 1) / NUM_LABELS,
+                                                mu=0,
+                                                b=0.05,
+                                                alpha=alphas[0],
+                                                theta=np.pi / 7,
+                                                horizon=HORIZON)
+tmlg = TemporalMultiLabelGenerator(tmgc_config)
+if os.path.exists(filename):
+    hyper_spheres_base = HyperSpheres.load_from_file(filename)
+    print("Loaded existing file.")
+else:
+    hyper_spheres_base = tmlg.generate_hyper_spheres()
+    hyper_spheres_base.save_to_file(f"../data/base_hyper_spheres")
+    print("File not found. Generated and saved new data.")
+
+for alpha in alphas:
+    tmlg.alpha = alpha
+
+    temporal_hyper_spheres = tmlg.generate(hyper_spheres_base)
+    # temporal_hyper_spheres.save_to_file(f"../data/temporal_hyper_spheres_alpha_{alpha}")
     inter_homophily.append(temporal_hyper_spheres.inter_homophily())
     temporal_intra_homophily = temporal_hyper_spheres.intra_homophily()
     intra_homophily_mean.append(np.mean(temporal_intra_homophily))
     intra_homophily_std.append(np.std(temporal_intra_homophily))
+    for h in range(HORIZON + 1):
+        intra_homophily[h].append(temporal_intra_homophily[h])
 
+colors = plt.cm.viridis(np.linspace(0, 1, HORIZON + 1))
 plt.figure(figsize=(8, 5))
-plt.plot(alphas, inter_homophily, 's--', label='Inter-Homophily', color='orange')
+for i in range(HORIZON + 1):
+    plt.plot(alphas, intra_homophily[i], 's--', label=f'Intra-Homophily time {i}', color=colors[i])
 
-plt.errorbar(alphas, intra_homophily_mean, yerr=intra_homophily_std,
-             fmt='o-', capsize=5, label='Intra-Homophily (mean ± std)')
+plt.plot(alphas, inter_homophily, 's--', label='Inter-Homophily', color='red')
+# plt.errorbar(alphas, intra_homophily_mean, yerr=intra_homophily_std,
+#              fmt='o-', capsize=5, label='Intra-Homophily (mean ± std)')
 plt.xlabel("Alpha")
+plt.ylim(0, 1)
 plt.ylabel("Homophily")
 plt.title("Homophily vs Alpha")
 plt.grid(True)

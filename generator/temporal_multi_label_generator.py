@@ -1,8 +1,11 @@
+from itertools import combinations
+
 import numpy as np
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
 
 from generator.HyperSpheres import HyperSpheres
+from generator.HyperSpheresGraph import HyperSpheresGraph
 from generator.TemporalHyperSpheres import TemporalHyperSpheres
 from generator.multi_label_generator import MultiLabelGenerator, MultiLabelGeneratorConfig
 
@@ -43,34 +46,35 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
 
         MultiLabelGenerator.parameter_feasibility_check(config)
 
-        assert config.horizon > 0
-
-    def generate(self, base_graph: HyperSpheres = None):
+    def generate(self, hyper_spheres: HyperSpheres = None):
         # generate time zero data
-        if base_graph is None:
-            base_graph = super().generate()
+        if hyper_spheres is None:
+            hyper_spheres = super().generate_hyper_spheres()
+
+        base_graph = super().form_graph(hyper_spheres)
 
         temporal_hyper_spheres = [base_graph]
+
+        if self.horizon == 0:
+            return TemporalHyperSpheres(temporal_hyper_spheres)
 
         # generate temporal changes
 
         # compute rotational matrix
-        x_rel = base_graph.x_data[:, :self.m_rel]  # (N, M')
-        R = self.rotational_matrix(x_rel)
+        x_rel = base_graph.hyper_spheres.x_data[:, :self.m_rel]  # (N, M')
+        # R = self.rotational_matrix(x_rel)
+        R = self.full_composite_rotation()
 
         for t in range(1, self.horizon + 1):
             # 1. rotate data
             x_rel = x_rel @ R  # x_rel to be used in next time step
             xt = self._extend_feature(x_rel)
+            hyper_spheres_t = HyperSpheres(xt, base_graph.hyper_spheres.spheres_hs, base_graph.hyper_spheres.sphere_HS)
 
-            # 2. regenerate labels
-            yt, yt_noised = self._generate_labels(xt, base_graph.spheres_hs)
-
-            # 3. recompute edges
-            adj_mat_t, edge_list_t = self._compute_edges(yt)
+            hyper_spheres_graph_t = super().form_graph(hyper_spheres_t)
 
             temporal_hyper_spheres.append(
-                HyperSpheres(xt, yt, yt_noised, base_graph.spheres_hs, base_graph.sphere_HS, adj_mat_t, edge_list_t))
+                hyper_spheres_graph_t)
 
         return TemporalHyperSpheres(temporal_hyper_spheres)
 
@@ -97,6 +101,32 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
         R_m = U @ R_2 @ U.T + (np.eye(self.m_rel) - U @ U.T)
 
         return R_m
+
+    def lie_rotation_matrix(self, n1, n2):
+        """
+        Rotation matrix in plane spanned by orthonormal vectors n1 and n2 using Lie formulation.
+        https://analyticphysics.com/Higher%20Dimensions/Rotations%20in%20Higher%20Dimensions.htm
+        """
+        n1 = n1[:, np.newaxis]
+        n2 = n2[:, np.newaxis]
+        I = np.eye(len(n1))
+        n1n1T = n1 @ n1.T
+        n2n2T = n2 @ n2.T
+        n2n1T = n2 @ n1.T
+        n1n2T = n1 @ n2.T
+        return I + (n2n1T - n1n2T) * np.sin(self.theta) + (n1n1T + n2n2T) * (np.cos(self.theta) - 1)
+
+    def full_composite_rotation(self):
+        """
+        Composite rotation matrix in R^n rotating by theta in every 2D plane spanned by basis vectors.
+        """
+        R = np.eye(self.m_rel)
+        for i, j in combinations(range(self.m_rel), 2):
+            e_i = np.eye(self.m_rel)[:, i]
+            e_j = np.eye(self.m_rel)[:, j]
+            R_ij = self.lie_rotation_matrix(e_i, e_j)
+            R = R_ij @ R  # Apply in sequence
+        return R
 
     def visualize(self, ths: TemporalHyperSpheres, ax=None):
 

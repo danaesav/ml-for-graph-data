@@ -32,7 +32,7 @@ class DatasetLoader(object):
             edge_weights.append(np.zeros(edge_index_t.shape[1]))
 
             # --- Node features and labels ---
-            features.append(ths.temporal_hyper_spheres[t].x_data)
+            features.append(ths.temporal_hyper_spheres[t].hyper_spheres.x_data)
             targets.append(ths.temporal_hyper_spheres[t].y_data)
 
         # Create the PyTorch Geometric Temporal dataset
