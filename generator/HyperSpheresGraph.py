@@ -33,7 +33,7 @@ class HyperSpheresGraph:
     def intra_homophily(self):
         total = 0
         if len(self.edge_list) == 0:
-            return 0
+            return 1
         for i, j in self.edge_list:
             total += jaccard_similarity(self.y_data[i], self.y_data[j])
         return total / len(self.edge_list)

@@ -62,11 +62,11 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
 
         # compute rotational matrix
         x_rel = base_graph.hyper_spheres.x_data[:, :self.m_rel]  # (N, M')
-        # R = self.rotational_matrix(x_rel)
-        R = self.full_composite_rotation()
+        R = self.rotational_matrix(x_rel)
 
         for t in range(1, self.horizon + 1):
             # 1. rotate data
+            # x_rel = self.translation(x_rel)   # translation instead of rotation
             x_rel = x_rel @ R  # x_rel to be used in next time step
             xt = self._extend_feature(x_rel)
             hyper_spheres_t = HyperSpheres(xt, base_graph.hyper_spheres.spheres_hs, base_graph.hyper_spheres.sphere_HS)
@@ -77,6 +77,11 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
                 hyper_spheres_graph_t)
 
         return TemporalHyperSpheres(temporal_hyper_spheres)
+
+    def translation(self, x_rel):
+        random_noise = np.random.uniform(-0.005, 0.005, size=x_rel.shape)
+        x_t = x_rel  + random_noise
+        return x_t
 
     def rotational_matrix(self, X):
         """
@@ -101,32 +106,6 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
         R_m = U @ R_2 @ U.T + (np.eye(self.m_rel) - U @ U.T)
 
         return R_m
-
-    def lie_rotation_matrix(self, n1, n2):
-        """
-        Rotation matrix in plane spanned by orthonormal vectors n1 and n2 using Lie formulation.
-        https://analyticphysics.com/Higher%20Dimensions/Rotations%20in%20Higher%20Dimensions.htm
-        """
-        n1 = n1[:, np.newaxis]
-        n2 = n2[:, np.newaxis]
-        I = np.eye(len(n1))
-        n1n1T = n1 @ n1.T
-        n2n2T = n2 @ n2.T
-        n2n1T = n2 @ n1.T
-        n1n2T = n1 @ n2.T
-        return I + (n2n1T - n1n2T) * np.sin(self.theta) + (n1n1T + n2n2T) * (np.cos(self.theta) - 1)
-
-    def full_composite_rotation(self):
-        """
-        Composite rotation matrix in R^n rotating by theta in every 2D plane spanned by basis vectors.
-        """
-        R = np.eye(self.m_rel)
-        for i, j in combinations(range(self.m_rel), 2):
-            e_i = np.eye(self.m_rel)[:, i]
-            e_j = np.eye(self.m_rel)[:, j]
-            R_ij = self.lie_rotation_matrix(e_i, e_j)
-            R = R_ij @ R  # Apply in sequence
-        return R
 
     def visualize(self, ths: TemporalHyperSpheres, ax=None):
 

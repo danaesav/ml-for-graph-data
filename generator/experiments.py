@@ -6,10 +6,11 @@ from matplotlib import pyplot as plt
 from generator.HyperSpheres import HyperSpheres
 from generator.temporal_multi_label_generator import TemporalMultiLabelGeneratorConfig, TemporalMultiLabelGenerator
 
-HORIZON = 5
+HORIZON = 3
 NUM_LABELS = 20
-alphas = range(0, 17)
-filename = f"../data/base_hyper_spheres"
+NUM_FEATURES = 10
+alphas = range(0, 11)
+filename = f"../data/base_hyper_spheres_labels{NUM_LABELS}_features{NUM_FEATURES}"
 
 intra_homophily_mean = []
 intra_homophily_std = []
@@ -18,8 +19,8 @@ intra_homophily = []
 for h in range(HORIZON + 1):
     intra_homophily.append([])
 
-tmgc_config = TemporalMultiLabelGeneratorConfig(m_rel=10,
-                                                m_irr=10,
+tmgc_config = TemporalMultiLabelGeneratorConfig(m_rel=NUM_FEATURES,
+                                                m_irr=0,
                                                 m_red=0,
                                                 q=NUM_LABELS,
                                                 N=500,
@@ -36,7 +37,7 @@ if os.path.exists(filename):
     print("Loaded existing file.")
 else:
     hyper_spheres_base = tmlg.generate_hyper_spheres()
-    hyper_spheres_base.save_to_file(f"../data/base_hyper_spheres")
+    hyper_spheres_base.save_to_file(filename)
     print("File not found. Generated and saved new data.")
 
 for alpha in alphas:
@@ -62,7 +63,8 @@ plt.plot(alphas, inter_homophily, 's--', label='Inter-Homophily', color='red')
 plt.xlabel("Alpha")
 plt.ylim(0, 1)
 plt.ylabel("Homophily")
-plt.title("Homophily vs Alpha")
+plt.title(f"Rotation {NUM_LABELS} labels, {NUM_FEATURES} features")
+# plt.title(f"Translation {NUM_LABELS} labels, {NUM_FEATURES} features")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

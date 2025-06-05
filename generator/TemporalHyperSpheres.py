@@ -28,6 +28,8 @@ class TemporalHyperSpheres:
             for i, j in graph.edge_list:
                 total_jaccard += jaccard_similarity(graph.y_data[i], graph.y_data[j])
             total_edges += len(graph.edge_list)
+        if total_edges == 0:
+            return 1
         return total_jaccard / total_edges
 
     def intra_homophily(self, start_time=0, end_time=None):
