@@ -3,6 +3,7 @@ from itertools import combinations
 import numpy as np
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
+from typing import Literal
 
 from generator.HyperSpheres import HyperSpheres
 from generator.HyperSpheresGraph import HyperSpheresGraph
@@ -46,7 +47,7 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
 
         MultiLabelGenerator.parameter_feasibility_check(config)
 
-    def generate(self, hyper_spheres: HyperSpheres = None):
+    def generate(self, hyper_spheres: HyperSpheres = None, rotation_reference:Literal['data', 'sphere']='data'):
         # generate time zero data
         if hyper_spheres is None:
             hyper_spheres = super().generate_hyper_spheres()
@@ -62,9 +63,16 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
 
         # compute rotational matrix
         x_rel = base_graph.hyper_spheres.x_data[:, :self.m_rel]  # (N, M')
-        R = self.rotational_matrix(x_rel)
 
-        for t in range(1, self.horizon + 1):
+        # use hypersphere centers for rotation matrix instead
+        if rotation_reference == 'sphere':
+            X_center = np.array([ci for (ci, ri) in base_graph.hyper_spheres.spheres_hs]) #(q, 2)
+            R = self.rotational_matrix(X_center)
+
+        else:
+            R = self.rotational_matrix(x_rel)
+
+        for t in range(self.horizon):
             # 1. rotate data
             # x_rel = self.translation(x_rel)   # translation instead of rotation
             x_rel = x_rel @ R  # x_rel to be used in next time step
