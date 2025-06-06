@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import matplotlib as mpl
 from dataclasses import dataclass, field
+from typing import Literal
 
 from scipy.spatial import distance
 
@@ -123,7 +124,7 @@ class MultiLabelGenerator:
         self.b = config.b
         self.alpha = config.alpha
 
-    def generate_hyper_spheres(self):
+    def generate_hyper_spheres(self, sphere_sampling:Literal['polar', 'cartesian']='polar', data_sampling:Literal['polar', 'cartesian', 'global']='global'):
 
         # spheres represented as tuple(center, radius)
 
@@ -137,17 +138,28 @@ class MultiLabelGenerator:
             ci = np.zeros(self.m_rel)
             ri = np.random.uniform(self.min_r, self.max_r)
 
-            max_c = 1 - ri
-            min_c = -max_c
-
-            for j in range(self.m_rel):
-                cij = np.random.uniform(min_c, max_c)
-
-                ci[j] = cij
-                max_c = np.sqrt(np.square(1 - ri) - np.square(ci).sum())
+            if sphere_sampling == 'cartesian':
+                max_c = 1 - ri
                 min_c = -max_c
 
-                # TODO: sample uniformally with polar coordinates 
+                for j in range(self.m_rel):
+                    cij = np.random.uniform(min_c, max_c)
+
+                    ci[j] = cij
+                    max_c = np.sqrt(np.square(1 - ri) - np.square(ci).sum())
+                    min_c = -max_c
+
+            else:
+                # sample uniformally with polar coordinates 
+                # sample (l, theta_1, ... theta_{m-1})
+                ai = np.random.uniform(0, np.pi, size=self.m_rel-2) # theta_(1, ..., m-2) coord shape(m - 2)
+                ai = np.append(ai, np.random.uniform(0, np.pi*2)) # theta_(m-1) coord  shape(m-1)
+                li = np.random.uniform(0, 1-ri) # length coord
+
+                for j in range(self.m_rel-1):
+                    ci[j] = li * np.prod(np.sin(ai[:j])) * np.cos(ai[j])
+
+                ci[self.m_rel-1] = li * np.prod(np.sin(ai))
 
             spheres_hs.append((ci, ri))
 
@@ -169,18 +181,45 @@ class MultiLabelGenerator:
 
             cij, ri = spheres_hs[k]
 
-            max_x = cij + ri
-            min_x = cij - ri
+            if data_sampling == 'cartesian':
 
-            for j in range(self.m_rel):
-                xkj = np.random.uniform(min_x, max_x)
+                max_x = cij + ri
+                min_x = cij - ri
 
-                xk[j] = xkj[j]
-                x_range = np.sqrt(np.square(ri) - np.square(xk[:(j + 1)] - cij[:(j + 1)]).sum())
-                max_x = cij + x_range
-                min_x = cij - x_range
+                for j in range(self.m_rel):
+                    xkj = np.random.uniform(min_x, max_x)
 
+                    xk[j] = xkj[j]
+                    x_range = np.sqrt(np.square(ri) - np.square(xk[:(j + 1)] - cij[:(j + 1)]).sum())
+                    max_x = cij + x_range
+                    min_x = cij - x_range
+
+            elif data_sampling == 'polar':
                 # TODO: sample uniformally with polar coordinates 
+
+                # sample (l, theta_1, ... theta_{m-1})
+                ai = np.random.uniform(0, np.pi, size=self.m_rel-2) # theta_(1, ..., m-2) coord shape(m - 2)
+                ai = np.append(ai, np.random.uniform(0, np.pi*2)) # theta_(m-1) coord  shape(m-1)
+                li = np.random.uniform(0, ri) # length coord
+
+                for j in range(self.m_rel-1):
+                    xk[j] = li * np.prod(np.sin(ai[:j])) * np.cos(ai[j])
+
+                xk[self.m_rel-1] = li * np.prod(np.sin(ai))
+
+                xk += cij
+
+            else:
+                # global sampling
+                # sample (l, theta_1, ... theta_{m-1})
+                ai = np.random.uniform(0, np.pi, size=self.m_rel-2) # theta_(1, ..., m-2) coord shape(m - 2)
+                ai = np.append(ai, np.random.uniform(0, np.pi*2)) # theta_(m-1) coord  shape(m-1)
+                li = np.random.uniform(0, 1) # length coord
+
+                for j in range(self.m_rel-1):
+                    xk[j] = li * np.prod(np.sin(ai[:j])) * np.cos(ai[j])
+
+                xk[self.m_rel-1] = li * np.prod(np.sin(ai))
 
             x_rel[i] = xk
 
@@ -266,6 +305,8 @@ class MultiLabelGenerator:
         """
         dist = distance.hamming(yi, yj)
         p = 1 / (2 * (1 + pow(pow(self.b, -1) * dist, self.alpha)))
+        # p = 1 / (10 * (1 + pow(pow(self.b, -1) * dist, self.alpha)))
+
         return p
 
     def visualize(self, hyper_spheres_graph: HyperSpheresGraph, ax=None, legend=True):
@@ -323,8 +364,8 @@ if __name__ == "__main__":
                                        m_red=0,
                                        q=5,
                                        N=15,
-                                       max_r=0.7,
-                                       min_r=0.1,
+                                       max_r=0.8,
+                                       min_r=0.3,
                                        mu=0,
                                        b=0.1,
                                        alpha=16)
