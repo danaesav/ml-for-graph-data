@@ -22,7 +22,7 @@ THRESHOLD = 0.5  # for classification
 
 
 def load_data(config, train_ratio=0.8):
-    dataset = DatasetLoader(config).get_dataset()
+    dataset, embeddings = DatasetLoader(config).get_dataset()
     return temporal_signal_split(dataset, train_ratio=train_ratio)
 
 
