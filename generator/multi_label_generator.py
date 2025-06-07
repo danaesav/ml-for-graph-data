@@ -292,9 +292,10 @@ class MultiLabelGenerator:
                 if prob <= pij:
                     adj_mat[i, j] = True
                     adj_mat[j, i] = True
-                    edge_list.append((i, j))
+                    edge_list.append([i, j])
+                    edge_list.append([j, i])
 
-        return adj_mat, edge_list
+        return adj_mat, np.array(edge_list).T
 
     def edge_prob(self, yi, yj):
         """
