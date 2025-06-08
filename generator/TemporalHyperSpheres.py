@@ -25,9 +25,13 @@ class TemporalHyperSpheres:
         total_jaccard = 0
         total_edges = 0
         for graph in self.temporal_hyper_spheres[start_time:end_time]:
-            for i, j in graph.edge_list:
+            
+            N = graph.edge_list.shape[-1]
+            for k in range(0, N, 2):
+                i, j = graph.edge_list[:, k]
                 total_jaccard += jaccard_similarity(graph.y_data[i], graph.y_data[j])
-            total_edges += len(graph.edge_list)
+            total_edges += N/2
+            
         if total_edges == 0:
             return 1
         return total_jaccard / total_edges

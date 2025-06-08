@@ -34,6 +34,9 @@ class HyperSpheresGraph:
         total = 0
         if len(self.edge_list) == 0:
             return 1
-        for i, j in self.edge_list:
+        
+        N = self.edge_list.shape[-1]
+        for k in range(0, N, 2):
+            i, j = self.edge_list[:, k]
             total += jaccard_similarity(self.y_data[i], self.y_data[j])
-        return total / len(self.edge_list)
+        return total / (N / 2)
