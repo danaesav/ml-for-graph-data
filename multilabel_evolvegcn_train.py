@@ -86,9 +86,22 @@ def evaluate(model, test_dataset, loss_fn, threshold=THRESHOLD):
 
 
 if __name__ == "__main__":
-    config = TemporalMultiLabelGeneratorConfig(m_rel=NUM_FEATURES, m_irr=0, m_red=0, q=NUM_LABELS, N=NUM_NODES,
-                                               max_r=0.7, min_r=0.1, mu=0, b=0.1, alpha=16, theta=np.pi / 7,
-                                               horizon=NUM_TIMESTEPS)
+    config = TemporalMultiLabelGeneratorConfig(m_rel=NUM_FEATURES, 
+                                               m_irr=0, 
+                                               m_red=0, 
+                                               q=NUM_LABELS, 
+                                               N=NUM_NODES,
+                                               max_r=0.7, 
+                                               min_r=0.1, 
+                                               mu=0, 
+                                               b=0.1, 
+                                               alpha=16, 
+                                               theta=np.pi / 7,
+                                               horizon=NUM_TIMESTEPS,
+                                               sphere_sampling='polar',
+                                               data_sampling='global',
+                                               rotation_reference='data',
+                                               )
     train_dataset, test_dataset = load_data(config)
     model, optimizer, loss_fn = initialize_model()
 

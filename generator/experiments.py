@@ -10,7 +10,7 @@ HORIZON = 3
 NUM_LABELS = 20
 NUM_FEATURES = 10
 alphas = range(0, 11)
-filename = f"../data/base_hyper_spheres_labels{NUM_LABELS}_features{NUM_FEATURES}"
+filename = f"./data/base_hyper_spheres_labels{NUM_LABELS}_features{NUM_FEATURES}"
 
 intra_homophily_mean = []
 intra_homophily_std = []
@@ -30,7 +30,11 @@ tmgc_config = TemporalMultiLabelGeneratorConfig(m_rel=NUM_FEATURES,
                                                 b=0.05,
                                                 alpha=alphas[0],
                                                 theta=np.pi / 7,
-                                                horizon=HORIZON)
+                                                horizon=HORIZON,
+                                                sphere_sampling='polar',
+                                                data_sampling='global',
+                                                rotation_reference='data'
+                                                )
 tmlg = TemporalMultiLabelGenerator(tmgc_config)
 if os.path.exists(filename):
     hyper_spheres_base = HyperSpheres.load_from_file(filename)

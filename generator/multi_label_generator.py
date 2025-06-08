@@ -71,6 +71,10 @@ class MultiLabelGeneratorConfig:
     b: float
     alpha: float
 
+    # other params
+    sphere_sampling:Literal['polar', 'cartesian']
+    data_sampling:Literal['polar', 'cartesian', 'global']
+
     def __post_init__(self):
         self.m = self.m_rel + self.m_irr + self.m_red
 
@@ -124,7 +128,11 @@ class MultiLabelGenerator:
         self.b = config.b
         self.alpha = config.alpha
 
-    def generate_hyper_spheres(self, sphere_sampling:Literal['polar', 'cartesian']='polar', data_sampling:Literal['polar', 'cartesian', 'global']='global'):
+        #other params
+        self.sphere_sampling:Literal['polar', 'cartesian'] = config.sphere_sampling
+        self.data_sampling:Literal['polar', 'cartesian', 'global'] = config.data_sampling
+
+    def generate_hyper_spheres(self):
 
         # spheres represented as tuple(center, radius)
 
@@ -138,7 +146,7 @@ class MultiLabelGenerator:
             ci = np.zeros(self.m_rel)
             ri = np.random.uniform(self.min_r, self.max_r)
 
-            if sphere_sampling == 'cartesian':
+            if self.sphere_sampling == 'cartesian':
                 max_c = 1 - ri
                 min_c = -max_c
 
@@ -181,7 +189,7 @@ class MultiLabelGenerator:
 
             cij, ri = spheres_hs[k]
 
-            if data_sampling == 'cartesian':
+            if self.data_sampling == 'cartesian':
 
                 max_x = cij + ri
                 min_x = cij - ri
@@ -194,7 +202,7 @@ class MultiLabelGenerator:
                     max_x = cij + x_range
                     min_x = cij - x_range
 
-            elif data_sampling == 'polar':
+            elif self.data_sampling == 'polar':
                 # TODO: sample uniformally with polar coordinates 
 
                 # sample (l, theta_1, ... theta_{m-1})
@@ -369,7 +377,10 @@ if __name__ == "__main__":
                                        min_r=0.3,
                                        mu=0,
                                        b=0.1,
-                                       alpha=16)
+                                       alpha=16,
+                                       sphere_sampling='polar',
+                                       data_sampling='global'
+                                       )
 
     mlg = MultiLabelGenerator(config)
 

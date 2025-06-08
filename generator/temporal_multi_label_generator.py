@@ -29,6 +29,7 @@ class TemporalMultiLabelGeneratorConfig(MultiLabelGeneratorConfig):
 
     theta: float
     horizon: int
+    rotation_reference:Literal['data', 'sphere']
 
 
 class TemporalMultiLabelGenerator(MultiLabelGenerator):
@@ -41,13 +42,14 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
 
         self.theta = config.theta
         self.horizon = config.horizon
+        self.rotation_reference:Literal['data', 'sphere'] = config.rotation_reference
 
     @staticmethod
     def parameter_feasibility_check(config):
 
         MultiLabelGenerator.parameter_feasibility_check(config)
 
-    def generate(self, hyper_spheres: HyperSpheres = None, rotation_reference:Literal['data', 'sphere']='data'):
+    def generate(self, hyper_spheres: HyperSpheres = None):
         # generate time zero data
         if hyper_spheres is None:
             hyper_spheres = super().generate_hyper_spheres()
@@ -65,7 +67,7 @@ class TemporalMultiLabelGenerator(MultiLabelGenerator):
         x_rel = base_graph.hyper_spheres.x_data[:, :self.m_rel]  # (N, M')
 
         # use hypersphere centers for rotation matrix instead
-        if rotation_reference == 'sphere':
+        if self.rotation_reference == 'sphere':
             X_center = np.array([ci for (ci, ri) in base_graph.hyper_spheres.spheres_hs]) #(q, 2)
             R = self.rotational_matrix(X_center)
 
@@ -147,7 +149,10 @@ if __name__ == "__main__":
                                                b=0.1,
                                                alpha=16,
                                                theta=np.pi / 7,
-                                               horizon=15
+                                               horizon=15,
+                                               sphere_sampling='polar',
+                                               data_sampling='global',
+                                               rotation_reference='data'
                                                )
 
     tmlg = TemporalMultiLabelGenerator(config)

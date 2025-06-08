@@ -99,13 +99,22 @@ def evaluate(model, test_dataset, node_embeddings, loss_fn, threshold=THRESHOLD)
 
 
 if __name__ == "__main__":
-    config = TemporalMultiLabelGeneratorConfig(m_rel=NUM_FEATURES, m_irr=0, m_red=0, 
-                                               q=NUM_LABELS, N=NUM_NODES,
+    config = TemporalMultiLabelGeneratorConfig(m_rel=NUM_FEATURES, 
+                                               m_irr=0, 
+                                               m_red=0, 
+                                               q=NUM_LABELS, 
+                                               N=NUM_NODES,
                                                max_r=0.7, 
                                                min_r=((NUM_LABELS / 10) + 1) / NUM_LABELS, 
-                                               mu=0, b=0.1, alpha=16, 
+                                               mu=0, 
+                                               b=0.1, 
+                                               alpha=16, 
                                                theta=np.pi / 7,
-                                               horizon=NUM_TIMESTEPS)
+                                               horizon=NUM_TIMESTEPS,
+                                               sphere_sampling='polar',
+                                               data_sampling='global',
+                                               rotation_reference='data',
+                                               )
     
     train_dataset, test_dataset, train_embedding, test_embedding = load_data(config)
     model, optimizer, loss_fn = initialize_model()
