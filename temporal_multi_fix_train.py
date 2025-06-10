@@ -8,6 +8,7 @@ from torch_geometric_temporal import temporal_signal_split
 from dataset_loader import DatasetLoader
 from generator.temporal_multi_label_generator import TemporalMultiLabelGeneratorConfig
 from models.TemporalMultiFix import TemporalMultiFix
+from utils import metrics
 
 NUM_NODES = 50          # Must match N in generator config
 NUM_FEATURES = 10        # m_rel = 2, total features = m_rel + m_irr + m_red = 2
@@ -93,9 +94,16 @@ def evaluate(model, test_dataset, node_embeddings, loss_fn, threshold=THRESHOLD)
     # Concatenate all batches and compute metrics
     all_preds = torch.cat(all_preds, dim=0).numpy()
     all_targets = torch.cat(all_targets, dim=0).numpy()
-    val_f1 = f1_score(all_targets, all_preds, average='macro')  # macro means compute per label and then average
 
-    print(f"Test BCE Loss: {avg_loss:.4f} | Validation Macro F1 Score: {val_f1:.4f}")
+    val_f1_macro, val_f1_micro, val_roc_auc_score, val_ap_macro = metrics(all_targets, all_preds)
+
+    print(f"Test BCE Loss: {avg_loss:.4f}\n"
+          f"Validation Macro F1 Score: {val_f1_macro:.4f}\n"
+          f"Validation Micro F1 Score: {val_f1_micro:.4f}\n"
+          f"Validation Macro Average Precision Score: {val_ap_macro:.4f}\n"
+          f"Validation AUC-ROC Score: {val_roc_auc_score:.4f}\n")
+
+    return val_f1_macro, val_f1_micro, val_roc_auc_score, val_ap_macro
 
 
 if __name__ == "__main__":

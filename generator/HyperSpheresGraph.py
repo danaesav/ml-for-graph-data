@@ -45,11 +45,11 @@ class HyperSpheresGraph:
             total += jaccard_similarity(self.y_data[i], self.y_data[j])
         return total / (N / 2)
 
-    def plot_label_distribution(self):
-        num_cols = self.y_data.shape[1]
-        col_indices = np.arange(1, num_cols+1)
-        label_distribution = self.y_data * col_indices
-        label_distribution = label_distribution.flatten()
-        sns.violinplot(data=label_distribution, orient='h', inner='box')
+    def plot_label_distribution(self, title=None):
+        counts = self.y_data.sum(axis=-1)
+        sns.violinplot(data=counts, orient='h', inner='box')
         plt.xlabel('Label count per node')
+
+        if title:
+            plt.title(title)
         plt.show()

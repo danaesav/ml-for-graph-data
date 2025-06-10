@@ -5,11 +5,12 @@ from torch_geometric_temporal import temporal_signal_split
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.metrics import f1_score, average_precision_score, roc_auc_score
-
 from dataset_loader import DatasetLoader
 from models.MultiLabelEvolveGCN import MultiLabelEvolveGCN
 from generator.temporal_multi_label_generator import TemporalMultiLabelGeneratorConfig
+
+from utils import metrics
+from tqdm import tqdm
 
 
 NUM_NODES = 500  # Must match N in generator config
@@ -40,25 +41,12 @@ def initialize_model():
     loss_fn = nn.BCEWithLogitsLoss()
     return model, optimizer, loss_fn
 
-def _eval_rocauc(y_true, y_pred):
-    rocauc_list = []
 
-    for i in range(y_true.shape[1]):
-
-        #AUC is only defined when there is at least one positive data.
-        if np.sum(y_true[:, i] == 1) > 0 and np.sum(y_true[:, i] == 0) > 0:
-            is_labeled = y_true[:, i] == y_true[:, i]
-            rocauc_list.append(roc_auc_score(y_true[is_labeled, i], y_pred[is_labeled, i]))
-
-    if len(rocauc_list) == 0:
-        raise RuntimeError('No positively labeled data available. Cannot compute ROC-AUC.')
-
-    return sum(rocauc_list) / len(rocauc_list)
 
 def train(model, train_dataset, optimizer, loss_fn, epochs=EPOCHS):
     model.train()
     losses = []
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         total_loss = 0
         for snapshot in train_dataset:
             optimizer.zero_grad()
@@ -96,16 +84,16 @@ def evaluate(model, test_dataset, loss_fn, threshold=THRESHOLD):
     # Concatenate all batches and compute metrics
     all_preds = torch.cat(all_preds, dim=0).numpy()
     all_targets = torch.cat(all_targets, dim=0).numpy()
-    val_f1_macro = f1_score(all_targets, all_preds, average='macro')  # macro means compute per label and then average
-    val_f1_micro = f1_score(all_targets, all_preds, average='micro')
-    val_ap_macro = average_precision_score(y_true = all_targets, y_score = all_preds, average='macro')
-    val_roc_auc_score = _eval_rocauc(all_targets, all_preds)
+
+    val_f1_macro, val_f1_micro, val_roc_auc_score, val_ap_macro = metrics(all_targets, all_preds)
 
     print(f"Test BCE Loss: {avg_loss:.4f}\n"
           f"Validation Macro F1 Score: {val_f1_macro:.4f}\n"
           f"Validation Micro F1 Score: {val_f1_micro:.4f}\n"
           f"Validation Macro Average Precision Score: {val_ap_macro:.4f}\n"
           f"Validation AUC-ROC Score: {val_roc_auc_score:.4f}\n")
+
+    return val_f1_macro, val_f1_micro, val_roc_auc_score, val_ap_macro
 
 
 if __name__ == "__main__":

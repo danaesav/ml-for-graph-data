@@ -8,7 +8,7 @@ from generator.temporal_multi_label_generator import TemporalMultiLabelGenerator
 
 HORIZON = 3
 NUM_LABELS = 10
-NUM_FEATURES = 10
+NUM_FEATURES = 2
 alphas = range(8, 9)
 filename = f"./data/base_hyper_spheres_labels{NUM_LABELS}_features{NUM_FEATURES}"
 
@@ -56,7 +56,8 @@ for alpha in alphas:
     for h in range(HORIZON + 1):
         intra_homophily[h].append(temporal_intra_homophily[h])
 
-    temporal_hyper_spheres.temporal_hyper_spheres[0].plot_label_distribution()
+    temporal_hyper_spheres.temporal_hyper_spheres[0].plot_label_distribution(f'T=0, sphere={tmgc_config.sphere_sampling}, data={tmgc_config.data_sampling}')
+    temporal_hyper_spheres.temporal_hyper_spheres[1].plot_label_distribution(f'T=1, sphere={tmgc_config.sphere_sampling}, data={tmgc_config.data_sampling}')
 
 colors = plt.cm.viridis(np.linspace(0, 1, HORIZON + 1))
 plt.figure(figsize=(8, 5))
