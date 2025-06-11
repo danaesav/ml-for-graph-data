@@ -6,7 +6,7 @@ from torch_geometric_temporal.nn.recurrent import EvolveGCNH
 
 # Original name: FPLPGCN_dw_linear
 class TemporalMultiFix(nn.Module):
-    def __init__(self, input_dim, num_of_nodes, output_dim, num_gcn_layers=2, num_label_layers=10, dw_dim=64):
+    def __init__(self, input_dim, num_of_nodes, output_dim, num_gcn_layers=2, num_label_layers=10, dw_dim=None):
         super(TemporalMultiFix, self).__init__()
 
         # Layers for feature aggregation
@@ -20,14 +20,18 @@ class TemporalMultiFix(nn.Module):
             self.label_layers.append(EvolveGCNH(num_of_nodes=num_of_nodes, in_channels=output_dim))
 
         # TODO: self.fusion_layer = nn.Linear(input_dim + output_dim + dw_dim, output_dim)
-        self.fusion_layer = nn.Linear(input_dim + output_dim, output_dim)
+        self.use_embedding = dw_dim is not None
+        if self.use_embedding: # use embeddings
+            self.fusion_layer = nn.Linear(input_dim + output_dim + dw_dim, output_dim)
+        else: # no embeddings
+            self.fusion_layer = nn.Linear(input_dim + output_dim, output_dim)
 
         self.FP = None
         self.LP = None
         self.dw_emb = None
         self.all_emb = None
 
-    def forward(self, x, y, edge_index, edge_weight, deep_walk_emb):
+    def forward(self, x, y, edge_index, edge_weight, deep_walk_emb=None):
         """
         x should be [num nodes, num features]
         edge index should be [num features, num edges]
@@ -57,8 +61,13 @@ class TemporalMultiFix(nn.Module):
         final_label_emb = label_embeddings[-1]
         # TODO: final_dw_emb = deep_walk_emb_seq[-1]
 
-        # TODO: x_fused = torch.cat((final_feature_emb, final_label_emb, final_dw_emb), dim=1)
-        x_fused = torch.cat([final_feature_emb, final_label_emb], dim=-1)
+        if self.use_embedding and deep_walk_emb is not None:
+            # TODO: x_fused = torch.cat((final_feature_emb, final_label_emb, final_dw_emb), dim=1)
+            # print(final_feature_emb.shape, final_label_emb.shape, deep_walk_emb.shape)
+            x_fused = torch.cat((final_feature_emb, final_label_emb, deep_walk_emb), dim=1)
+        else:
+            x_fused = torch.cat([final_feature_emb, final_label_emb], dim=-1)
+
         output = self.fusion_layer(x_fused)
 
         # in the original implementation they pass output through sigmoid, however here we will use BCEWithLogisLoss so we do not apply sigmoid here

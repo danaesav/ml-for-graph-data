@@ -1,16 +1,14 @@
 import numpy as np
 import torch as th
 from torch_geometric_temporal import DynamicGraphTemporalSignal
-
 from generator.temporal_multi_label_generator import TemporalMultiLabelGenerator, TemporalMultiLabelGeneratorConfig
-from generator.TemporalHyperSpheres import TemporalHyperSpheres
 from models.NodeEmbedding import NodeEmbedding
 
 class DatasetLoader(object):
-    def __init__(self, config: TemporalMultiLabelGeneratorConfig):
+    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim):
         self.generator = TemporalMultiLabelGenerator(config)
         self.lags = config.horizon+1
-        self.embedder = NodeEmbedding()
+        self.embedder = NodeEmbedding(embedding_dim=embedding_dim)
 
     
     # def generate_node_embeddings(self, edge_index):
@@ -27,6 +25,9 @@ class DatasetLoader(object):
     def get_dataset(self) -> DynamicGraphTemporalSignal:
         # Generate temporal data
         ths = self.generator.generate()
+
+        inter_homophily = ths.inter_homophily()
+        intra_homophily = ths.intra_homophily()
 
         # Convert edges + data into DynamicGraphTemporalSignal format
         edge_indices = []
@@ -53,6 +54,7 @@ class DatasetLoader(object):
 
             # --- Node embedding ---
             embedding_t = self.embedder.get_embedding(edge_index_t, adj_mat_t, 'Node2Vec')
+            # print(edge_index_t.shape, adj_mat_t.shape ,embedding_t.shape)
             embeddings.append(embedding_t)
 
         # Create the PyTorch Geometric Temporal dataset
@@ -63,4 +65,4 @@ class DatasetLoader(object):
             targets=targets
         )
 
-        return dataset, embeddings
+        return dataset, embeddings, inter_homophily, intra_homophily

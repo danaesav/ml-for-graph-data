@@ -19,6 +19,7 @@ EPOCHS = 100
 LR = 1e-2
 THRESHOLD = 0.5         # for classification
 EMBEDDING = True
+EMBEDDING_DIM = 64
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def temporal_signal_split_list(data, train_ratio):
@@ -31,7 +32,7 @@ def temporal_signal_split_list(data, train_ratio):
 
 
 def load_data(config, train_ratio=0.8):
-    dataset, embeddings = DatasetLoader(config).get_dataset()
+    dataset, embeddings, *_ = DatasetLoader(config, EMBEDDING_DIM).get_dataset()
     return *temporal_signal_split(dataset, train_ratio=train_ratio), *temporal_signal_split_list(embeddings, train_ratio=train_ratio)
 
 
@@ -40,7 +41,8 @@ def initialize_model():
     model = TemporalMultiFix(
         input_dim=NUM_FEATURES,
         num_of_nodes=NUM_NODES,
-        output_dim=NUM_LABELS, dw_dim=64)
+        output_dim=NUM_LABELS,
+        dw_dim=EMBEDDING_DIM if EMBEDDING else None,)
     optimizer = optim.Adam(model.parameters(), lr=LR)
     loss_fn = nn.BCEWithLogitsLoss()
     return model, optimizer, loss_fn
