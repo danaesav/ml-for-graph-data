@@ -11,7 +11,7 @@ from models.TemporalMultiFix import TemporalMultiFix
 from dataset_loader import DatasetLoader
 from utils import metrics
 
-
+DEVICE = th.device('cuda' if th.cuda.is_available() else 'cpu')
 
 
 PARAM = {'NUM_NODES' : 500,  # Must match N in generator config
@@ -56,7 +56,7 @@ def initialize_models(param):
         input_dim=param['NUM_REL_FEATURES'] + param['NUM_IRR_FEATURES'] + param['NUM_RED_FEATURES'],
         num_of_nodes=param['NUM_NODES'],
         output_dim=param['NUM_LABELS'],
-        dw_dim=param['EMBEDDING_DIM'],)
+        dw_dim=param['EMBEDDING_DIM'],).to(DEVICE)
 
     optimizer_tmf_dw = th.optim.Adam(model_tmf_dw.parameters(), lr=param['LR'])
 
@@ -68,7 +68,7 @@ def initialize_models(param):
     model_tmf = TemporalMultiFix(
         input_dim=param['NUM_REL_FEATURES'] + param['NUM_IRR_FEATURES'] + param['NUM_RED_FEATURES'],
         num_of_nodes=param['NUM_NODES'],
-        output_dim=param['NUM_LABELS'])
+        output_dim=param['NUM_LABELS']).to(DEVICE)
 
     optimizer_tmf = th.optim.Adam(model_tmf.parameters(), lr=param['LR'])
 
@@ -81,7 +81,7 @@ def initialize_models(param):
         num_nodes=param['NUM_NODES'],
         node_features=param['NUM_REL_FEATURES'] + param['NUM_IRR_FEATURES'] + param['NUM_RED_FEATURES'],
         num_labels=param['NUM_LABELS']
-    )
+    ).to(DEVICE)
 
     optimizer_mlegcn = th.optim.Adam(model_mlegcn.parameters(), lr=param['LR'])
 
@@ -112,7 +112,8 @@ def train(models, train_dataset, embeddings, loss_fn, params):
         total_loss_mlegcn = 0
 
         for time, snapshot in enumerate(train_dataset):
-            embedding = embeddings[time]
+            embedding = embeddings[time].to(DEVICE)
+            snapshot = snapshot.to(DEVICE)
 
             models['tmf']['optimizer'].zero_grad()
             models['tmf_dw']['optimizer'].zero_grad()
@@ -134,9 +135,9 @@ def train(models, train_dataset, embeddings, loss_fn, params):
             models['tmf_dw']['optimizer'].step()
             models['mlegcn']['optimizer'].step()
 
-            total_loss_tmf += loss_tmf.item()
-            total_loss_tmf_dw += loss_tmf_dw.item()
-            total_loss_mlegcn += loss_mlegcn.item()
+            total_loss_tmf += loss_tmf.cpu().item()
+            total_loss_tmf_dw += loss_tmf_dw.cpu().item()
+            total_loss_mlegcn += loss_mlegcn.cpu().item()
 
         losses['tmf'].append(total_loss_tmf / train_dataset.snapshot_count)
         losses['tmf_dw'].append(total_loss_tmf_dw / train_dataset.snapshot_count)
@@ -177,7 +178,8 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
 
     with th.no_grad():
         for time, snapshot in enumerate(test_dataset):
-            embedding = embeddings[time]
+            embedding = embeddings[time].to(DEVICE)
+            snapshot = snapshot.to(DEVICE)
 
             y_hat_tmf = models['tmf']['model'](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr)
             y_hat_tmf_dw = models['tmf_dw']['model'](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr, embedding)
@@ -187,9 +189,9 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
             loss_tmf_dw = loss_fn(y_hat_tmf_dw, snapshot.y)
             loss_mlegcn = loss_fn(y_hat_mlegcn, snapshot.y)
 
-            total_loss_tmf += loss_tmf.item()
-            total_loss_tmf_dw += loss_tmf_dw.item()
-            total_loss_mlegcn += loss_mlegcn.item()
+            total_loss_tmf += loss_tmf.cpu().item()
+            total_loss_tmf_dw += loss_tmf_dw.cpu().item()
+            total_loss_mlegcn += loss_mlegcn.cpu().item()
 
             # Apply sigmoid and threshold to get predictions
             preds_tmf = (th.sigmoid(y_hat_tmf) > param['THRESHOLD']).float()
