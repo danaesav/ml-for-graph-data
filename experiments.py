@@ -4,6 +4,7 @@ import torch as th
 from tqdm import tqdm
 from torch_geometric_temporal import temporal_signal_split
 from matplotlib import pyplot as plt
+from datetime import datetime
 
 from generator.temporal_multi_label_generator import TemporalMultiLabelGeneratorConfig
 from models.MultiLabelEvolveGCN import MultiLabelEvolveGCN
@@ -274,24 +275,24 @@ def experiment_single_run(param, display = True):
     results['test-auc roc'] = test_results['auc_roc']
 
     if display:
-        out  = (f"Temporal MultiFix: train-loss:{results['train-loss']['tmf'][-1]:.2f}, "
-                + f"test-loss:{results['test-loss']['tmf']:.2f}, "
-                + f"test-f1-macro:{results['test-f1 macro']['tmf']:.2f}, "
-                + f"test-f1-micro:{results['test-f1 micro']['tmf']:.2f}, "
-                + f"test-AP-macro:{results['test-ap macro']['tmf']:.2f}, "
-                + f"test-AUC-ROC:{results['test-auc roc']['tmf']:.2f} \n"
-                + f"Temporal MultiFix Deepwalk: train-loss:{results['train-loss']['tmf_dw'][-1]:.2f}, "
-                + f"test-loss:{results['test-loss']['tmf_dw']:.2f}, "
-                + f"test-f1-macro:{results['test-f1 macro']['tmf_dw']:.2f}, "
-                + f"test-f1-micro:{results['test-f1 micro']['tmf_dw']:.2f}, "
-                + f"test-AP-macro:{results['test-ap macro']['tmf_dw']:.2f}, "
-                + f"test-AUC-ROC:{results['test-auc roc']['tmf_dw']:.2f} \n"
-                + f"MultiFix Evolve GCN: train-loss:{results['train-loss']['tmf_dw'][-1]:.2f}, "
-                + f"test-loss:{results['test-loss']['tmf_dw']:.2f}, "
-                + f"test-f1-macro:{results['test-f1 macro']['tmf_dw']:.2f}, "
-                + f"test-f1-micro:{results['test-f1 micro']['tmf_dw']:.2f}, "
-                + f"test-AP-macro:{results['test-ap macro']['tmf_dw']:.2f}, "
-                + f"test-AUC-ROC:{results['test-auc roc']['tmf_dw']:.2f} \n"
+        out  = (f"Temporal MultiFix: train-loss:{results['train-loss']['tmf'][-1]:.4f}, "
+                + f"test-loss:{results['test-loss']['tmf']:.4f}, "
+                + f"test-f1-macro:{results['test-f1 macro']['tmf']:.4f}, "
+                + f"test-f1-micro:{results['test-f1 micro']['tmf']:.4f}, "
+                + f"test-AP-macro:{results['test-ap macro']['tmf']:.4f}, "
+                + f"test-AUC-ROC:{results['test-auc roc']['tmf']:.4f} \n"
+                + f"Temporal MultiFix Deepwalk: train-loss:{results['train-loss']['tmf_dw'][-1]:.4f}, "
+                + f"test-loss:{results['test-loss']['tmf_dw']:.4f}, "
+                + f"test-f1-macro:{results['test-f1 macro']['tmf_dw']:.4f}, "
+                + f"test-f1-micro:{results['test-f1 micro']['tmf_dw']:.4f}, "
+                + f"test-AP-macro:{results['test-ap macro']['tmf_dw']:.4f}, "
+                + f"test-AUC-ROC:{results['test-auc roc']['tmf_dw']:.4f} \n"
+                + f"MultiFix Evolve GCN: train-loss:{results['train-loss']['tmf_dw'][-1]:.4f}, "
+                + f"test-loss:{results['test-loss']['tmf_dw']:.4f}, "
+                + f"test-f1-macro:{results['test-f1 macro']['tmf_dw']:.4f}, "
+                + f"test-f1-micro:{results['test-f1 micro']['tmf_dw']:.4f}, "
+                + f"test-AP-macro:{results['test-ap macro']['tmf_dw']:.4f}, "
+                + f"test-AUC-ROC:{results['test-auc roc']['tmf_dw']:.4f} \n"
                 )
 
         print(out)
@@ -396,28 +397,35 @@ def experiment_repeats(param, display=True):
     test_auc_roc_mlegcn_std = np.std(test_auc_roc_mlegcn)
 
     if display:
-        out = (f"\nTemporal MultiFix: \ntrain-loss:{train_loss_tmf_mean:.2f}+-{train_loss_tmf_std:.2f}\n"
-               + f"test-loss:{test_loss_tmf_mean:.2f}+-{test_loss_tmf_std:.2f}\n"
-               + f"test-f1-macro:{test_f1_macro_tmf_mean:.2f}+-{test_f1_macro_tmf_std:.2f}\n"
-               + f"test-f1-micro:{test_f1_micro_tmf_mean:.2f}+-{test_f1_micro_tmf_std:.2f}\n"
-               + f"test-AP-macro:{test_ap_macro_tmf_mean:.2f}+-{test_ap_macro_tmf_std:.2f}\n"
-               + f"test-AUC-ROC:{test_auc_roc_tmf_mean:.2f}+-{test_auc_roc_tmf_std:.2f}\n"
-               + f"\nTemporal MultiFix Deepwalk: \ntrain-loss:{train_loss_tmf_dw_mean:.2f}+-{train_loss_tmf_dw_std:.2f}\n"
-               + f"test-loss:{test_loss_tmf_dw_mean:.2f}+-{test_loss_tmf_dw_std:.2f}\n"
-               + f"test-f1-macro:{test_f1_macro_tmf_dw_mean:.2f}+-{test_f1_macro_tmf_dw_std:.2f}\n"
-               + f"test-f1-micro:{test_f1_micro_tmf_dw_mean:.2f}+-{test_f1_micro_tmf_dw_std:.2f}\n"
-               + f"test-AP-macro:{test_ap_macro_tmf_dw_mean:.2f}+-{test_ap_macro_tmf_dw_std:.2f}\n"
-               + f"test-AUC-ROC:{test_auc_roc_tmf_dw_mean:.2f}+-{test_auc_roc_tmf_dw_std:.2f}\n"
-               + f"\nMultiFix Evolve GCN: \ntrain-loss:{train_loss_mlegcn_mean:.2f}+-{train_loss_mlegcn_std:.2f}\n"
-               + f"test-loss:{test_loss_mlegcn_mean:.2f}+-{test_loss_mlegcn_std:.2f}\n"
-               + f"test-f1-macro:{test_f1_macro_mlegcn_mean:.2f}+-{test_f1_macro_mlegcn_std:.2f}\n"
-               + f"test-f1-micro:{test_f1_micro_mlegcn_mean:.2f}+-{test_f1_micro_mlegcn_std:.2f}\n"
-               + f"test-AP-macro:{test_ap_macro_mlegcn_mean:.2f}+-{test_ap_macro_mlegcn_std:.2f}\n"
-               + f"test-AUC-ROC:{test_auc_roc_mlegcn_mean:.2f}+-{test_auc_roc_mlegcn_std:.2f}\n"
-               + f"\n Dataset Inter Homophily:{inter_homophily_mean:.2f}+-{inter_homophily_std:.2f}\n"
+        out = (f"\nTemporal MultiFix: \ntrain-loss:{train_loss_tmf_mean:.4f}+-{train_loss_tmf_std:.4f}\n"
+               + f"test-loss:{test_loss_tmf_mean:.4f}+-{test_loss_tmf_std:.4f}\n"
+               + f"test-f1-macro:{test_f1_macro_tmf_mean:.4f}+-{test_f1_macro_tmf_std:.4f}\n"
+               + f"test-f1-micro:{test_f1_micro_tmf_mean:.4f}+-{test_f1_micro_tmf_std:.4f}\n"
+               + f"test-AP-macro:{test_ap_macro_tmf_mean:.4f}+-{test_ap_macro_tmf_std:.4f}\n"
+               + f"test-AUC-ROC:{test_auc_roc_tmf_mean:.4f}+-{test_auc_roc_tmf_std:.4f}\n"
+               + f"\nTemporal MultiFix Deepwalk: \ntrain-loss:{train_loss_tmf_dw_mean:.4f}+-{train_loss_tmf_dw_std:.4f}\n"
+               + f"test-loss:{test_loss_tmf_dw_mean:.4f}+-{test_loss_tmf_dw_std:.4f}\n"
+               + f"test-f1-macro:{test_f1_macro_tmf_dw_mean:.4f}+-{test_f1_macro_tmf_dw_std:.4f}\n"
+               + f"test-f1-micro:{test_f1_micro_tmf_dw_mean:.4f}+-{test_f1_micro_tmf_dw_std:.4f}\n"
+               + f"test-AP-macro:{test_ap_macro_tmf_dw_mean:.4f}+-{test_ap_macro_tmf_dw_std:.4f}\n"
+               + f"test-AUC-ROC:{test_auc_roc_tmf_dw_mean:.4f}+-{test_auc_roc_tmf_dw_std:.4f}\n"
+               + f"\nMultiFix Evolve GCN: \ntrain-loss:{train_loss_mlegcn_mean:.4f}+-{train_loss_mlegcn_std:.4f}\n"
+               + f"test-loss:{test_loss_mlegcn_mean:.4f}+-{test_loss_mlegcn_std:.4f}\n"
+               + f"test-f1-macro:{test_f1_macro_mlegcn_mean:.4f}+-{test_f1_macro_mlegcn_std:.4f}\n"
+               + f"test-f1-micro:{test_f1_micro_mlegcn_mean:.4f}+-{test_f1_micro_mlegcn_std:.4f}\n"
+               + f"test-AP-macro:{test_ap_macro_mlegcn_mean:.4f}+-{test_ap_macro_mlegcn_std:.4f}\n"
+               + f"test-AUC-ROC:{test_auc_roc_mlegcn_mean:.4f}+-{test_auc_roc_mlegcn_std:.4f}\n"
+               + f"\n Dataset Inter Homophily:{inter_homophily_mean:.4f}+-{inter_homophily_std:.4f}\n"
                )
 
         print(out)
+
+        # save to txt
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f".\\data\\{timestamp}.txt"
+
+        with open(filename, "w") as file:
+            file.write(out + str(param))
 
         #plot loss curves
         x = range(param['EPOCHS'])

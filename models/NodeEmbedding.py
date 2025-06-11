@@ -21,6 +21,13 @@ class NodeEmbedding:
 
     def get_embedding(self, edge_index, adj_mat, method:Literal['Node2Vec', 'DeepWalk']):
 
+        # identify isolated nodes
+        iso_nodes = np.where(adj_mat.sum(axis=-1) == 0)[0]
+
+        if iso_nodes.size > 0:
+            self_edges = np.stack([iso_nodes, iso_nodes])
+            edge_index = np.concatenate([edge_index, self_edges], axis=-1)
+
         if method == 'Node2Vec':
             return self._node2vec(edge_index)
         
