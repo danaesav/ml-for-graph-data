@@ -1,12 +1,31 @@
 import numpy as np
 import torch as th
+import os
+from datetime import datetime
 from torch_geometric_temporal import DynamicGraphTemporalSignal
 from generator.temporal_multi_label_generator import TemporalMultiLabelGenerator, TemporalMultiLabelGeneratorConfig
 from models.NodeEmbedding import NodeEmbedding
+from generator.HyperSpheres import HyperSpheres
 
 class DatasetLoader(object):
-    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim):
+    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim, filename, load=None):
+
+
         self.generator = TemporalMultiLabelGenerator(config)
+
+        if load and os.path.exists(load):
+            
+            self.base_hypersphere = HyperSpheres.load_from_file(load)
+            print("Loaded existing base file.")
+
+        else:
+            self.base_hypersphere = self.generator.generate_hyper_spheres()
+
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            self.base_hypersphere.save_to_file(filename+'_'+timestamp)
+            print("Generated and saved new base file.")
+
+
         self.lags = config.horizon+1
         self.embedder = NodeEmbedding(embedding_dim=embedding_dim)
 
@@ -24,7 +43,11 @@ class DatasetLoader(object):
 
     def get_dataset(self) -> DynamicGraphTemporalSignal:
         # Generate temporal data
-        ths = self.generator.generate()
+        ths = self.generator.generate(self.base_hypersphere)
+
+        # if filename:
+        #     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        #     ths.save_to_file(filename+'_'+timestamp)
 
         inter_homophily = ths.inter_homophily()
         intra_homophily = ths.intra_homophily()

@@ -15,19 +15,21 @@ from utils import metrics
 DEVICE = th.device('cuda' if th.cuda.is_available() else 'cpu')
 
 
-PARAM = {'NUM_NODES' : 500,  # Must match N in generator config
+PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'NUM_REL_FEATURES' : 10,
         'NUM_IRR_FEATURES' : 10,
         'NUM_RED_FEATURES' : 0,
         'NUM_LABELS' : 20,  # q = number of hyperspheres
         'NUM_TIMESTEPS' : 15,  # horizon
-        'EPOCHS' : 4,
+        'EPOCHS' : 200,
         'LR': 1e-2,
         'THRESHOLD' : 0.5,  # for classification
-        'REPEATS' : 2,
+        'REPEATS' : 5,
         'ALPHA' : 5,
         'EMBEDDING_DIM' : 128,
         'TRAIN_RATIO' : 0.8,
+        'FILENAME' : '.\\data\\base_graphs',
+        'BASEFILE' : '.\\data\\base_graphs_2025-06-12_02-49-34' #None for new base graph
     }
 
 
@@ -40,9 +42,8 @@ def temporal_signal_split_list(data, train_ratio):
     return train_iterator, test_iterator
 
 
-def load_data(config, param):
-    dataset, embeddings, inter_homophily, intra_homophily = DatasetLoader(config, param['EMBEDDING_DIM']).get_dataset()
-    # print('load_data: ', [eb.shape for eb in embeddings])
+def load_data(dataset_loader, param):
+    dataset, embeddings, inter_homophily, intra_homophily = dataset_loader.get_dataset()
     return (*temporal_signal_split(dataset, train_ratio=param['TRAIN_RATIO']),
             *temporal_signal_split_list(embeddings, train_ratio=param['TRAIN_RATIO']),
             inter_homophily,
@@ -224,7 +225,7 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
 
 
 
-def experiment_single_run(param, display = True):
+def experiment_single_run(param, datasets, display = True):
     # run singular repeat of experiment on both models with same dataset
 
     # setup experiment
@@ -235,29 +236,33 @@ def experiment_single_run(param, display = True):
         'test-f1 micro':None,
         'test-ap macro':None,
         'test-auc roc':None,
-        'inter-homophily':None,
-        'intra-homophily':None,
+        # 'inter-homophily':None,
+        # 'intra-homophily':None,
     }
 
-    config = TemporalMultiLabelGeneratorConfig(m_rel=param['NUM_REL_FEATURES'],
-                                               m_irr=param['NUM_IRR_FEATURES'],
-                                               m_red=param['NUM_RED_FEATURES'],
-                                               q=param['NUM_LABELS'],
-                                               N=param['NUM_NODES'],
-                                               max_r=0.8,
-                                               min_r=((param['NUM_LABELS'] / 10) + 1) / param['NUM_LABELS'],
-                                               mu=0,
-                                               b=0.05,
-                                               alpha=param['ALPHA'],
-                                               theta=np.pi / -(param['NUM_TIMESTEPS']//-2), #ceiling division
-                                               horizon=param['NUM_TIMESTEPS'],
-                                               sphere_sampling='polar',
-                                               data_sampling='global',
-                                               rotation_reference='data',
-                                            )
+    # config = TemporalMultiLabelGeneratorConfig(m_rel=param['NUM_REL_FEATURES'],
+    #                                            m_irr=param['NUM_IRR_FEATURES'],
+    #                                            m_red=param['NUM_RED_FEATURES'],
+    #                                            q=param['NUM_LABELS'],
+    #                                            N=param['NUM_NODES'],
+    #                                            max_r=0.8,
+    #                                            min_r=((param['NUM_LABELS'] / 10) + 1) / param['NUM_LABELS'],
+    #                                            mu=0,
+    #                                            b=0.05,
+    #                                            alpha=param['ALPHA'],
+    #                                            theta=np.pi / -(param['NUM_TIMESTEPS']//-2), #ceiling division
+    #                                            horizon=param['NUM_TIMESTEPS'],
+    #                                            sphere_sampling='polar',
+    #                                            data_sampling='global',
+    #                                            rotation_reference='data',
+    #                                         )
 
     #generate dataset
-    train_dataset, test_dataset, train_embedding, test_embedding, results['inter-homophily'], results['intra-homophily'] = load_data(config, param)
+    # train_dataset, test_dataset, train_embedding, test_embedding, results['inter-homophily'], results['intra-homophily'] = load_data(config, param)
+    train_dataset = datasets['train_data']
+    test_dataset = datasets['test_data']
+    train_embedding = datasets['train_emb']
+    test_embedding = datasets['test_emb']
 
     # setup models
     models, loss = initialize_models(param)
@@ -287,12 +292,12 @@ def experiment_single_run(param, display = True):
                 + f"test-f1-micro:{results['test-f1 micro']['tmf_dw']:.4f}, "
                 + f"test-AP-macro:{results['test-ap macro']['tmf_dw']:.4f}, "
                 + f"test-AUC-ROC:{results['test-auc roc']['tmf_dw']:.4f} \n"
-                + f"MultiFix Evolve GCN: train-loss:{results['train-loss']['tmf_dw'][-1]:.4f}, "
-                + f"test-loss:{results['test-loss']['tmf_dw']:.4f}, "
-                + f"test-f1-macro:{results['test-f1 macro']['tmf_dw']:.4f}, "
-                + f"test-f1-micro:{results['test-f1 micro']['tmf_dw']:.4f}, "
-                + f"test-AP-macro:{results['test-ap macro']['tmf_dw']:.4f}, "
-                + f"test-AUC-ROC:{results['test-auc roc']['tmf_dw']:.4f} \n"
+                + f"MultiFix Evolve GCN: train-loss:{results['train-loss']['mlegcn'][-1]:.4f}, "
+                + f"test-loss:{results['test-loss']['mlegcn']:.4f}, "
+                + f"test-f1-macro:{results['test-f1 macro']['mlegcn']:.4f}, "
+                + f"test-f1-micro:{results['test-f1 micro']['mlegcn']:.4f}, "
+                + f"test-AP-macro:{results['test-ap macro']['mlegcn']:.4f}, "
+                + f"test-AUC-ROC:{results['test-auc roc']['mlegcn']:.4f} \n"
                 )
 
         print(out)
@@ -301,7 +306,7 @@ def experiment_single_run(param, display = True):
 
 
 
-def experiment_repeats(param, display=True):
+def experiment_repeats(param, datasets, display=True):
 
     train_loss_tmf = []
     test_loss_tmf = []
@@ -310,7 +315,7 @@ def experiment_repeats(param, display=True):
     test_ap_macro_tmf = []
     test_auc_roc_tmf = []
 
-    inter_homophily = []
+    inter_homophily = datasets['inter_homophily']
 
     train_loss_tmf_dw = []
     test_loss_tmf_dw = []
@@ -329,9 +334,9 @@ def experiment_repeats(param, display=True):
     for r in range(param['REPEATS']):
         print(f'Repeat: {r}')
 
-        results = experiment_single_run(param, display)
+        results = experiment_single_run(param, datasets, display)
 
-        inter_homophily.append(results['inter-homophily'])
+        # inter_homophily.append(results['inter-homophily'])
 
         train_loss_tmf.append(results['train-loss']['tmf'])
         test_loss_tmf.append(results['test-loss']['tmf'])
@@ -354,8 +359,8 @@ def experiment_repeats(param, display=True):
         test_ap_macro_mlegcn.append(results['test-ap macro']['mlegcn'])
         test_auc_roc_mlegcn.append(results['test-auc roc']['mlegcn'])
 
-    inter_homophily_mean = np.mean(inter_homophily)
-    inter_homophily_std = np.std(inter_homophily)
+    # inter_homophily_mean = np.mean(inter_homophily)
+    # inter_homophily_std = np.std(inter_homophily)
 
     train_loss_tmf_mean = np.mean(np.array(train_loss_tmf)[:, -1])
     train_loss_tmf_std = np.std(np.array(train_loss_tmf)[:, -1])
@@ -415,14 +420,14 @@ def experiment_repeats(param, display=True):
                + f"test-f1-micro:{test_f1_micro_mlegcn_mean:.4f}+-{test_f1_micro_mlegcn_std:.4f}\n"
                + f"test-AP-macro:{test_ap_macro_mlegcn_mean:.4f}+-{test_ap_macro_mlegcn_std:.4f}\n"
                + f"test-AUC-ROC:{test_auc_roc_mlegcn_mean:.4f}+-{test_auc_roc_mlegcn_std:.4f}\n"
-               + f"\n Dataset Inter Homophily:{inter_homophily_mean:.4f}+-{inter_homophily_std:.4f}\n"
+               + f"\n Dataset Inter Homophily:{inter_homophily:.4f}\n"
                )
 
         print(out)
 
         # save to txt
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f".\\data\\{timestamp}.txt"
+        filename = f".\\data\\results_alpha{param['ALPHA']}_{timestamp}.txt"
 
         with open(filename, "w") as file:
             file.write(out + str(param))
@@ -443,6 +448,7 @@ def experiment_repeats(param, display=True):
 
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss (mean ± std)")
+        plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
         plt.grid(True)
         plt.legend()
         plt.tight_layout()
@@ -457,19 +463,58 @@ def experiment_repeats(param, display=True):
 
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss (mean ± std)")
+        plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
         plt.grid(True)
         plt.ylim(0, 1)
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        plt.show(block=False)
 
 
 def experiment_main(param):
-    experiment_repeats(param)
+    config = TemporalMultiLabelGeneratorConfig(m_rel=param['NUM_REL_FEATURES'],
+                                                m_irr=param['NUM_IRR_FEATURES'],
+                                                m_red=param['NUM_RED_FEATURES'],
+                                                q=param['NUM_LABELS'],
+                                                N=param['NUM_NODES'],
+                                                max_r=0.8,
+                                                min_r=((param['NUM_LABELS'] / 10) + 1) / param['NUM_LABELS'],
+                                                mu=0,
+                                                b=0.05,
+                                                alpha=param['ALPHA'],
+                                                theta=np.pi / -(param['NUM_TIMESTEPS']//-2), #ceiling division
+                                                horizon=param['NUM_TIMESTEPS'],
+                                                sphere_sampling='polar',
+                                                data_sampling='global',
+                                                rotation_reference='data',
+                                                )
+    
+    dataset_loader = DatasetLoader(config, param['EMBEDDING_DIM'], param['FILENAME'], param['BASEFILE'])
+    # load_data(dataset_loader, param)
+    
+    # alphas = [5, 4, 3, 2, 1, 0]
+    alphas = [6, 7, 8, 9, 10]
+    for alpha in alphas:
+        # experiment 
+        param['ALPHA'] = alpha
+        dataset_loader.generator.alpha = alpha
+        train_dataset, test_dataset, train_embedding, test_embedding, inter_homophily, intra_homophily = load_data(dataset_loader, param)
+        
+        datasets = {'train_data' : train_dataset,
+                    'test_data' : test_dataset,
+                    'train_emb' : train_embedding,
+                    'test_emb' : test_embedding,
+                    'inter_homophily' : inter_homophily,
+                    'intra_homophily' : intra_homophily,
+                    }
+
+        experiment_repeats(param, datasets)
     # experiment_single_run(param)
+    plt.show()
 
 
 
 if __name__ == "__main__":
+    print(f'{DEVICE} available')
     experiment_main(PARAM)
 
