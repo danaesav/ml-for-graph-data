@@ -1,5 +1,6 @@
 import numpy as np
 import torch as th
+import os
 
 from tqdm import tqdm
 from torch_geometric_temporal import temporal_signal_split
@@ -29,7 +30,10 @@ PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'EMBEDDING_DIM' : 128,
         'TRAIN_RATIO' : 0.8,
         'FILENAME' : '.\\data\\base_graphs',
-        'BASEFILE' : '.\\data\\base_graphs_2025-06-12_02-49-34' #None for new base graph
+        'BASEFILE' : '.\\data\\base_graphs_2025-06-12_02-49-34', #None for new base graph
+        'EXPERIMENT_PATH': '.\\data',
+        'DATA_FILE': 'results',
+        'IMAGE_FILE': 'image',
     }
 
 
@@ -107,12 +111,24 @@ def train(models, train_dataset, embeddings, loss_fn, params):
     losses = {'tmf' : [],
               'tmf_dw' : [],
               'mlegcn' : [],}
+    
+    f1_micro = {'tmf':[],'tmf_dw':[],'mlegcn':[]}
+    f1_macro = {'tmf': [],'tmf_dw': [],'mlegcn': []}
+    ap_macro = {'tmf': [],'tmf_dw': [],'mlegcn': []}
+    auc_roc = {'tmf': [],'tmf_dw': [],'mlegcn': []}
+
+    results = {'train_loss':losses,
+               'f1_micro':f1_micro,
+               'f1_macro':f1_macro,
+               'ap_macro':ap_macro,
+               'auc_roc':auc_roc}
 
     for epoch in tqdm(range(params['EPOCHS'])):
         total_loss_tmf = 0
         total_loss_tmf_dw = 0
         total_loss_mlegcn = 0
 
+        #training 
         for time, snapshot in enumerate(train_dataset):
             embedding = embeddings[time].to(DEVICE)
             snapshot = snapshot.to(DEVICE)
@@ -141,11 +157,30 @@ def train(models, train_dataset, embeddings, loss_fn, params):
             total_loss_tmf_dw += loss_tmf_dw.cpu().item()
             total_loss_mlegcn += loss_mlegcn.cpu().item()
 
-        losses['tmf'].append(total_loss_tmf / train_dataset.snapshot_count)
-        losses['tmf_dw'].append(total_loss_tmf_dw / train_dataset.snapshot_count)
-        losses['mlegcn'].append(total_loss_mlegcn / train_dataset.snapshot_count)
+        results['train_loss']['tmf'].append(total_loss_tmf / train_dataset.snapshot_count)
+        results['train_loss']['tmf_dw'].append(total_loss_tmf_dw / train_dataset.snapshot_count)
+        results['train_loss']['mlegcn'].append(total_loss_mlegcn / train_dataset.snapshot_count)
 
-    return losses
+        #training eval
+        eval_results = evaluate(models, train_dataset, embeddings, loss_fn, params)
+
+        results['f1_micro']['tmf'].append(eval_results['f1_micro']['tmf'])
+        results['f1_micro']['tmf_dw'].append(eval_results['f1_micro']['tmf_dw'])
+        results['f1_micro']['mlegcn'].append(eval_results['f1_micro']['mlegcn'])
+
+        results['f1_macro']['tmf'].append(eval_results['f1_macro']['tmf'])
+        results['f1_macro']['tmf_dw'].append(eval_results['f1_macro']['tmf_dw'])
+        results['f1_macro']['mlegcn'].append(eval_results['f1_macro']['mlegcn'])
+
+        results['ap_macro']['tmf'].append(eval_results['ap_macro']['tmf'])
+        results['ap_macro']['tmf_dw'].append(eval_results['ap_macro']['tmf_dw'])
+        results['ap_macro']['mlegcn'].append(eval_results['ap_macro']['mlegcn'])
+
+        results['auc_roc']['tmf'].append(eval_results['auc_roc']['tmf'])
+        results['auc_roc']['tmf_dw'].append(eval_results['auc_roc']['tmf_dw'])
+        results['auc_roc']['mlegcn'].append(eval_results['auc_roc']['mlegcn'])
+
+    return results
 
 
 def evaluate(models, test_dataset, embeddings, loss_fn, param):
@@ -231,34 +266,17 @@ def experiment_single_run(param, datasets, display = True):
     # setup experiment
     results = {
         'train-loss':None,
+        'train-f1 macro':None,
+        'train-f1 micro':None,
+        'train-ap macro':None,
+        'train-auc roc':None,
         'test-loss':None,
         'test-f1 macro':None,
         'test-f1 micro':None,
         'test-ap macro':None,
         'test-auc roc':None,
-        # 'inter-homophily':None,
-        # 'intra-homophily':None,
     }
 
-    # config = TemporalMultiLabelGeneratorConfig(m_rel=param['NUM_REL_FEATURES'],
-    #                                            m_irr=param['NUM_IRR_FEATURES'],
-    #                                            m_red=param['NUM_RED_FEATURES'],
-    #                                            q=param['NUM_LABELS'],
-    #                                            N=param['NUM_NODES'],
-    #                                            max_r=0.8,
-    #                                            min_r=((param['NUM_LABELS'] / 10) + 1) / param['NUM_LABELS'],
-    #                                            mu=0,
-    #                                            b=0.05,
-    #                                            alpha=param['ALPHA'],
-    #                                            theta=np.pi / -(param['NUM_TIMESTEPS']//-2), #ceiling division
-    #                                            horizon=param['NUM_TIMESTEPS'],
-    #                                            sphere_sampling='polar',
-    #                                            data_sampling='global',
-    #                                            rotation_reference='data',
-    #                                         )
-
-    #generate dataset
-    # train_dataset, test_dataset, train_embedding, test_embedding, results['inter-homophily'], results['intra-homophily'] = load_data(config, param)
     train_dataset = datasets['train_data']
     test_dataset = datasets['test_data']
     train_embedding = datasets['train_emb']
@@ -268,7 +286,12 @@ def experiment_single_run(param, datasets, display = True):
     models, loss = initialize_models(param)
 
     # train models
-    results['train-loss'] = train(models, train_dataset, train_embedding, loss, param)
+    train_results = train(models, train_dataset, train_embedding, loss, param)
+    results['train-loss'] = train_results['train_loss']
+    results['train-f1 macro'] = train_results['f1_macro']
+    results['train-f1 micro'] = train_results['f1_micro']
+    results['train-ap macro'] = train_results['ap_macro']
+    results['train-auc roc'] = train_results['auc_roc']
 
     # test models
     test_results = evaluate(models, test_dataset, test_embedding, loss, param)
@@ -309,6 +332,10 @@ def experiment_single_run(param, datasets, display = True):
 def experiment_repeats(param, datasets, display=True):
 
     train_loss_tmf = []
+    train_f1_macro_tmf = []
+    train_f1_micro_tmf = []
+    train_ap_macro_tmf = []
+    train_auc_roc_tmf = []
     test_loss_tmf = []
     test_f1_macro_tmf = []
     test_f1_micro_tmf = []
@@ -318,6 +345,10 @@ def experiment_repeats(param, datasets, display=True):
     inter_homophily = datasets['inter_homophily']
 
     train_loss_tmf_dw = []
+    train_f1_macro_tmf_dw = []
+    train_f1_micro_tmf_dw = []
+    train_ap_macro_tmf_dw = []
+    train_auc_roc_tmf_dw = []
     test_loss_tmf_dw = []
     test_f1_macro_tmf_dw = []
     test_f1_micro_tmf_dw = []
@@ -325,6 +356,10 @@ def experiment_repeats(param, datasets, display=True):
     test_auc_roc_tmf_dw = []
 
     train_loss_mlegcn = []
+    train_f1_macro_mlegcn = []
+    train_f1_micro_mlegcn = []
+    train_ap_macro_mlegcn = []
+    train_auc_roc_mlegcn = []
     test_loss_mlegcn = []
     test_f1_macro_mlegcn = []
     test_f1_micro_mlegcn = []
@@ -339,6 +374,10 @@ def experiment_repeats(param, datasets, display=True):
         # inter_homophily.append(results['inter-homophily'])
 
         train_loss_tmf.append(results['train-loss']['tmf'])
+        train_f1_macro_tmf.append(results['train-f1 macro']['tmf'])
+        train_f1_micro_tmf.append(results['train-f1 micro']['tmf'])
+        train_ap_macro_tmf.append(results['train-ap macro']['tmf'])
+        train_auc_roc_tmf.append(results['train-auc roc']['tmf'])
         test_loss_tmf.append(results['test-loss']['tmf'])
         test_f1_macro_tmf.append(results['test-f1 macro']['tmf'])
         test_f1_micro_tmf.append(results['test-f1 micro']['tmf'])
@@ -346,6 +385,10 @@ def experiment_repeats(param, datasets, display=True):
         test_auc_roc_tmf.append(results['test-auc roc']['tmf'])
 
         train_loss_tmf_dw.append(results['train-loss']['tmf_dw'])
+        train_f1_macro_tmf_dw.append(results['train-f1 macro']['tmf_dw'])
+        train_f1_micro_tmf_dw.append(results['train-f1 micro']['tmf_dw'])
+        train_ap_macro_tmf_dw.append(results['train-ap macro']['tmf_dw'])
+        train_auc_roc_tmf_dw.append(results['train-auc roc']['tmf_dw'])
         test_loss_tmf_dw.append(results['test-loss']['tmf_dw'])
         test_f1_macro_tmf_dw.append(results['test-f1 macro']['tmf_dw'])
         test_f1_micro_tmf_dw.append(results['test-f1 micro']['tmf_dw'])
@@ -353,14 +396,16 @@ def experiment_repeats(param, datasets, display=True):
         test_auc_roc_tmf_dw.append(results['test-auc roc']['tmf_dw'])
 
         train_loss_mlegcn.append(results['train-loss']['mlegcn'])
+        train_f1_macro_mlegcn.append(results['train-f1 macro']['mlegcn'])
+        train_f1_micro_mlegcn.append(results['train-f1 micro']['mlegcn'])
+        train_ap_macro_mlegcn.append(results['train-ap macro']['mlegcn'])
+        train_auc_roc_mlegcn.append(results['train-auc roc']['mlegcn'])
         test_loss_mlegcn.append(results['test-loss']['mlegcn'])
         test_f1_macro_mlegcn.append(results['test-f1 macro']['mlegcn'])
         test_f1_micro_mlegcn.append(results['test-f1 micro']['mlegcn'])
         test_ap_macro_mlegcn.append(results['test-ap macro']['mlegcn'])
         test_auc_roc_mlegcn.append(results['test-auc roc']['mlegcn'])
 
-    # inter_homophily_mean = np.mean(inter_homophily)
-    # inter_homophily_std = np.std(inter_homophily)
 
     train_loss_tmf_mean = np.mean(np.array(train_loss_tmf)[:, -1])
     train_loss_tmf_std = np.std(np.array(train_loss_tmf)[:, -1])
@@ -414,7 +459,7 @@ def experiment_repeats(param, datasets, display=True):
                + f"test-f1-micro:{test_f1_micro_tmf_dw_mean:.4f}+-{test_f1_micro_tmf_dw_std:.4f}\n"
                + f"test-AP-macro:{test_ap_macro_tmf_dw_mean:.4f}+-{test_ap_macro_tmf_dw_std:.4f}\n"
                + f"test-AUC-ROC:{test_auc_roc_tmf_dw_mean:.4f}+-{test_auc_roc_tmf_dw_std:.4f}\n"
-               + f"\nMultiFix Evolve GCN: \ntrain-loss:{train_loss_mlegcn_mean:.4f}+-{train_loss_mlegcn_std:.4f}\n"
+               + f"\nMulti-Label Evolve GCN: \ntrain-loss:{train_loss_mlegcn_mean:.4f}+-{train_loss_mlegcn_std:.4f}\n"
                + f"test-loss:{test_loss_mlegcn_mean:.4f}+-{test_loss_mlegcn_std:.4f}\n"
                + f"test-f1-macro:{test_f1_macro_mlegcn_mean:.4f}+-{test_f1_macro_mlegcn_std:.4f}\n"
                + f"test-f1-micro:{test_f1_micro_mlegcn_mean:.4f}+-{test_f1_micro_mlegcn_std:.4f}\n"
@@ -426,52 +471,127 @@ def experiment_repeats(param, datasets, display=True):
         print(out)
 
         # save to txt
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f".\\data\\results_alpha{param['ALPHA']}_{timestamp}.txt"
+        # timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"{param['DATA_FILE']}_alpha{param['ALPHA']}.txt"
+        filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
 
-        with open(filename, "w") as file:
+        with open(filepath, "w") as file:
             file.write(out + str(param))
 
-        #plot loss curves
-        x = range(param['EPOCHS'])
-        y_train_tmf = np.mean(np.array(train_loss_tmf), axis=0) #size(R, E)
-        y_train_tmf_std = np.std(np.array(train_loss_tmf), axis=0)
-        y_train_tmf_dw = np.mean(np.array(train_loss_tmf_dw), axis=0)  # size(R, E)
-        y_train_tmf_dw_std = np.std(np.array(train_loss_tmf_dw), axis=0)
-        y_train_mlegcn = np.mean(np.array(train_loss_mlegcn), axis=0)  # size(R, E)
-        y_train_mlegcn_std = np.std(np.array(train_loss_mlegcn), axis=0)
+        #plot training metrics curves over epochs
+        curves = [(train_loss_tmf, train_loss_tmf_dw, train_loss_mlegcn, 'Training Loss', 'loss-curve'),
+                  (train_f1_macro_tmf, train_f1_macro_tmf_dw, train_f1_macro_mlegcn, 'Training F1 Macro', 'f1-macro-curve'),
+                  (train_f1_micro_tmf, train_f1_micro_tmf_dw, train_f1_micro_mlegcn, 'Training F1 Micro', 'f1-micro-curve'),
+                  (train_ap_macro_tmf, train_ap_macro_tmf_dw, train_ap_macro_mlegcn, 'Training AP Macro', 'ap-macro-curve'),
+                  (train_auc_roc_tmf, train_auc_roc_tmf_dw, train_auc_roc_mlegcn, 'Training AUC ROC', 'auc-roc-curve')
+                  ]
 
-        plt.figure(figsize=(8, 5))
-        plt.errorbar(x, y_train_tmf, yerr=y_train_tmf_std, fmt='o-', capsize=5, label='Temporal MultiFix', color='red')
-        plt.errorbar(x, y_train_tmf_dw, yerr=y_train_tmf_dw_std, fmt='o-', capsize=5, label='Temporal MultiFix DW', color='blue')
-        plt.errorbar(x, y_train_mlegcn, yerr=y_train_mlegcn_std, fmt='o-', capsize=5, label='MultiLabel Evolve GCN', color='green')
+        for data_tmf, data_tmf_dw, data_mlegcn, title, imgname in curves:
 
-        plt.xlabel("Epoch")
-        plt.ylabel("Training Loss (mean ± std)")
-        plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
-        plt.grid(True)
-        plt.legend()
-        plt.tight_layout()
-        plt.show(block=False)
+            #plot 1
+            x = range(param['EPOCHS'])
+            y_train_tmf = np.mean(np.array(data_tmf), axis=0) #size(R, E)
+            y_train_tmf_std = np.std(np.array(data_tmf), axis=0)
+            y_train_tmf_dw = np.mean(np.array(data_tmf_dw), axis=0)  # size(R, E)
+            y_train_tmf_dw_std = np.std(np.array(data_tmf_dw), axis=0)
+            y_train_mlegcn = np.mean(np.array(data_mlegcn), axis=0)  # size(R, E)
+            y_train_mlegcn_std = np.std(np.array(data_mlegcn), axis=0)
 
-        plt.figure(figsize=(8, 5))
-        plt.errorbar(x, y_train_tmf, yerr=y_train_tmf_std, fmt='o-', capsize=5, label='Temporal MultiFix', color='red')
-        plt.errorbar(x, y_train_tmf_dw, yerr=y_train_tmf_dw_std, fmt='o-', capsize=5, label='Temporal MultiFix DW',
-                     color='blue')
-        plt.errorbar(x, y_train_mlegcn, yerr=y_train_mlegcn_std, fmt='o-', capsize=5, label='MultiLabel Evolve GCN',
-                     color='green')
+            plt.figure(figsize=(8, 5))
+            plt.errorbar(x, y_train_tmf, yerr=y_train_tmf_std, fmt='o-', capsize=5, label='Temporal MultiFix', color='red')
+            plt.errorbar(x, y_train_tmf_dw, yerr=y_train_tmf_dw_std, fmt='o-', capsize=5, label='Temporal MultiFix DW', color='blue')
+            plt.errorbar(x, y_train_mlegcn, yerr=y_train_mlegcn_std, fmt='o-', capsize=5, label='MultiLabel Evolve GCN', color='green')
 
-        plt.xlabel("Epoch")
-        plt.ylabel("Training Loss (mean ± std)")
-        plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
-        plt.grid(True)
-        plt.ylim(0, 1)
-        plt.legend()
-        plt.tight_layout()
-        plt.show(block=False)
+            plt.xlabel("Epoch")
+            plt.ylabel(f"{title} (mean ± std)")
+            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+
+            filename = f"{param['IMAGE_FILE']}_{imgname}.png"
+            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            plt.savefig(filepath)
+            plt.close()
+            
+            # plot 2
+            x = range(param['EPOCHS'])
+            y_train_tmf = np.mean(np.array(train_loss_tmf), axis=0) #size(R, E)
+            y_train_tmf_std = np.std(np.array(train_loss_tmf), axis=0)
+            y_train_tmf_dw = np.mean(np.array(train_loss_tmf_dw), axis=0)  # size(R, E)
+            y_train_tmf_dw_std = np.std(np.array(train_loss_tmf_dw), axis=0)
+            y_train_mlegcn = np.mean(np.array(train_loss_mlegcn), axis=0)  # size(R, E)
+            y_train_mlegcn_std = np.std(np.array(train_loss_mlegcn), axis=0)
+
+            plt.figure(figsize=(8, 5))
+            plt.plot(x, y_train_tmf, label='Temporal MultiFix', color='red')
+            plt.fill_between(x, y_train_tmf - y_train_tmf_std, y_train_tmf + y_train_tmf_std, color='red', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_tmf_dw, label='Temporal MultiFix DW', color='blue')
+            plt.fill_between(x, y_train_tmf_dw - y_train_tmf_dw_std, y_train_tmf_dw + y_train_tmf_dw_std, color='blue', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_mlegcn, label='MultiLabel Evolve GCN', color='green')
+            plt.fill_between(x, y_train_mlegcn - y_train_mlegcn_std, y_train_mlegcn + y_train_mlegcn_std, color='green', alpha=0.3, label='_nolegend_')
+
+            plt.xlabel("Epoch")
+            plt.ylabel(f"{title} (mean ± std)")
+            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+
+            filename = f"{param['IMAGE_FILE']}_{imgname}-1.png"
+            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            plt.savefig(filepath)
+            plt.close()
+
+            # plot 3
+            plt.figure(figsize=(8, 5))
+            plt.errorbar(x, y_train_tmf, yerr=y_train_tmf_std, fmt='o-', capsize=5, label='Temporal MultiFix', color='red')
+            plt.errorbar(x, y_train_tmf_dw, yerr=y_train_tmf_dw_std, fmt='o-', capsize=5, label='Temporal MultiFix DW',
+                        color='blue')
+            plt.errorbar(x, y_train_mlegcn, yerr=y_train_mlegcn_std, fmt='o-', capsize=5, label='MultiLabel Evolve GCN',
+                        color='green')
+
+            plt.xlabel("Epoch")
+            plt.ylabel(f"{title} (mean ± std)")
+            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.grid(True)
+            plt.ylim(0, 1)
+            plt.legend()
+            plt.tight_layout()
+            filename = f"{param['IMAGE_FILE']}_{imgname}-zoom.png"
+            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            plt.savefig(filepath)
+            plt.close()
+
+            # plot 4
+            plt.figure(figsize=(8, 5))
+            plt.plot(x, y_train_tmf, label='Temporal MultiFix', color='red')
+            plt.fill_between(x, y_train_tmf - y_train_tmf_std, y_train_tmf + y_train_tmf_std, color='red', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_tmf_dw, label='Temporal MultiFix DW', color='blue')
+            plt.fill_between(x, y_train_tmf_dw - y_train_tmf_dw_std, y_train_tmf_dw + y_train_tmf_dw_std, color='blue', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_mlegcn, label='MultiLabel Evolve GCN', color='green')
+            plt.fill_between(x, y_train_mlegcn - y_train_mlegcn_std, y_train_mlegcn + y_train_mlegcn_std, color='green', alpha=0.3, label='_nolegend_')
+
+            plt.xlabel("Epoch")
+            plt.ylabel(f"{title} (mean ± std)")
+            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.grid(True)
+            plt.ylim(0, 1)
+            plt.legend()
+            plt.tight_layout()
+            filename = f"{param['IMAGE_FILE']}_{imgname}-zoom-1.png"
+            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            plt.savefig(filepath)
+            plt.close()
+
 
 
 def experiment_main(param):
+    # setup export, establish folder to store all results
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    param['EXPERIMENT_PATH'] = os.path.join(param['EXPERIMENT_PATH'], timestamp)
+    os.makedirs(param['EXPERIMENT_PATH'], exist_ok=True)
+
     config = TemporalMultiLabelGeneratorConfig(m_rel=param['NUM_REL_FEATURES'],
                                                 m_irr=param['NUM_IRR_FEATURES'],
                                                 m_red=param['NUM_RED_FEATURES'],
@@ -490,10 +610,10 @@ def experiment_main(param):
                                                 )
     
     dataset_loader = DatasetLoader(config, param['EMBEDDING_DIM'], param['FILENAME'], param['BASEFILE'])
-    # load_data(dataset_loader, param)
     
     # alphas = [5, 4, 3, 2, 1, 0]
-    alphas = [6, 7, 8, 9, 10]
+    # alphas = [6, 7, 8, 9, 10]
+    alphas = [0.5, 1.5, 2.5]
     for alpha in alphas:
         # experiment 
         param['ALPHA'] = alpha
@@ -510,7 +630,6 @@ def experiment_main(param):
 
         experiment_repeats(param, datasets)
     # experiment_single_run(param)
-    plt.show()
 
 
 
