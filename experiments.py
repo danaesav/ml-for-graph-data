@@ -21,14 +21,16 @@ PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'NUM_IRR_FEATURES' : 10,
         'NUM_RED_FEATURES' : 0,
         'NUM_LABELS' : 20,  # q = number of hyperspheres
-        'NUM_TIMESTEPS' : 15,  # horizon
+        'NUM_TIMESTEPS' : 30,  # horizon
         'EPOCHS' : 200,
         'LR': 1e-2,
         'THRESHOLD' : 0.5,  # for classification
         'REPEATS' : 5,
         'ALPHA' : 5,
         'EMBEDDING_DIM' : 64,
-        'TRAIN_RATIO' : 0.8,
+        'TRAIN_RATIO' : 0.6,
+        'VALIDATION_RATIO' : 0.2,
+        'TEST_RATIO' : 0.2,
         'FILENAME' : '.\\data\\base_graphs',
         'BASEFILE' : '.\\data\\base_graphs_2025-06-12_02-49-34', #None for new base graph
         'EXPERIMENT_PATH': '.\\data',
@@ -48,11 +50,28 @@ def temporal_signal_split_list(data, train_ratio):
 
 def load_data(dataset_loader, param):
     dataset, embeddings, inter_homophily, intra_homophily = dataset_loader.get_dataset()
-    return (*temporal_signal_split(dataset, train_ratio=param["TRAIN_RATIO"]),
-            *temporal_signal_split_list(embeddings, train_ratio=param["TRAIN_RATIO"]),
-            inter_homophily,
-            intra_homophily)
 
+    training_loop_ratio = param["TRAIN_RATIO"]+param["VALIDATION_RATIO"]
+
+    tmp_dataset, test_dataset = temporal_signal_split(dataset, train_ratio=training_loop_ratio)
+    tmp_embedding, test_embedding = temporal_signal_split_list(embeddings, train_ratio=training_loop_ratio)
+
+    train_dataset, validation_dataset = temporal_signal_split(tmp_dataset, train_ratio=param["TRAIN_RATIO"]/training_loop_ratio)
+    train_embedding, validation_embedding = temporal_signal_split_list(tmp_embedding, train_ratio=param["TRAIN_RATIO"]/training_loop_ratio)
+
+
+    datasets = {'train_data' : train_dataset,
+                'validation_data' : validation_dataset,
+                'test_data' : test_dataset,
+                'train_emb' : train_embedding,
+                'validation_emb' : validation_embedding,
+                'test_emb' : test_embedding,
+                'inter_homophily' : inter_homophily,
+                'intra_homophily' : intra_homophily,
+                }
+
+    return datasets
+    
 
 def initialize_models(param):
     # deepwalk_embeddings = None #shape(TIME, NUM_NODES, NUM_FEATURES)
@@ -288,8 +307,10 @@ def experiment_single_run(param, datasets, display = True):
     }
 
     train_dataset = datasets["train_data"]
+    validation_dataset = datasets["validation_data"]
     test_dataset = datasets["test_data"]
     train_embedding = datasets["train_emb"]
+    validation_embedding = datasets["validation_emb"]
     test_embedding = datasets["test_emb"]
 
     # setup models
@@ -621,16 +642,8 @@ def experiment_main(param):
         # experiment 
         param["ALPHA"] = alpha
         dataset_loader.generator.alpha = alpha
-        train_dataset, test_dataset, train_embedding, test_embedding, inter_homophily, intra_homophily = load_data(dataset_loader, param)
+        datasets = load_data(dataset_loader, param)
         
-        datasets = {'train_data' : train_dataset,
-                    'test_data' : test_dataset,
-                    'train_emb' : train_embedding,
-                    'test_emb' : test_embedding,
-                    'inter_homophily' : inter_homophily,
-                    'intra_homophily' : intra_homophily,
-                    }
-
         experiment_repeats(param, datasets)
     # experiment_single_run(param)
 
