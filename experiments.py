@@ -48,8 +48,8 @@ def temporal_signal_split_list(data, train_ratio):
 
 def load_data(dataset_loader, param):
     dataset, embeddings, inter_homophily, intra_homophily = dataset_loader.get_dataset()
-    return (*temporal_signal_split(dataset, train_ratio=param['TRAIN_RATIO']),
-            *temporal_signal_split_list(embeddings, train_ratio=param['TRAIN_RATIO']),
+    return (*temporal_signal_split(dataset, train_ratio=param["TRAIN_RATIO"]),
+            *temporal_signal_split_list(embeddings, train_ratio=param["TRAIN_RATIO"]),
             inter_homophily,
             intra_homophily)
 
@@ -59,12 +59,12 @@ def initialize_models(param):
 
     # Temporal MultiFix with Deepwalk embeddings
     model_tmf_dw = TemporalMultiFix(
-        input_dim=param['NUM_REL_FEATURES'] + param['NUM_IRR_FEATURES'] + param['NUM_RED_FEATURES'],
-        num_of_nodes=param['NUM_NODES'],
-        output_dim=param['NUM_LABELS'],
-        dw_dim=param['EMBEDDING_DIM'],).to(DEVICE)
+        input_dim=param["NUM_REL_FEATURES"] + param["NUM_IRR_FEATURES"] + param["NUM_RED_FEATURES"],
+        num_of_nodes=param["NUM_NODES"],
+        output_dim=param["NUM_LABELS"],
+        dw_dim=param["EMBEDDING_DIM"],).to(DEVICE)
 
-    optimizer_tmf_dw = th.optim.Adam(model_tmf_dw.parameters(), lr=param['LR'])
+    optimizer_tmf_dw = th.optim.Adam(model_tmf_dw.parameters(), lr=param["LR"])
 
     tmf_dw = {'model':model_tmf_dw,
               'optimizer':optimizer_tmf_dw}
@@ -72,11 +72,11 @@ def initialize_models(param):
 
     # Temporal MultiFix without Deepwalk Embeddings
     model_tmf = TemporalMultiFix(
-        input_dim=param['NUM_REL_FEATURES'] + param['NUM_IRR_FEATURES'] + param['NUM_RED_FEATURES'],
-        num_of_nodes=param['NUM_NODES'],
-        output_dim=param['NUM_LABELS']).to(DEVICE)
+        input_dim=param["NUM_REL_FEATURES"] + param["NUM_IRR_FEATURES"] + param["NUM_RED_FEATURES"],
+        num_of_nodes=param["NUM_NODES"],
+        output_dim=param["NUM_LABELS"]).to(DEVICE)
 
-    optimizer_tmf = th.optim.Adam(model_tmf.parameters(), lr=param['LR'])
+    optimizer_tmf = th.optim.Adam(model_tmf.parameters(), lr=param["LR"])
 
     tmf = {'model': model_tmf,
               'optimizer': optimizer_tmf}
@@ -84,12 +84,12 @@ def initialize_models(param):
 
     # MultiLabel EvolveGCN
     model_mlegcn = MultiLabelEvolveGCN(
-        num_nodes=param['NUM_NODES'],
-        node_features=param['NUM_REL_FEATURES'] + param['NUM_IRR_FEATURES'] + param['NUM_RED_FEATURES'],
-        num_labels=param['NUM_LABELS']
+        num_nodes=param["NUM_NODES"],
+        node_features=param["NUM_REL_FEATURES"] + param["NUM_IRR_FEATURES"] + param["NUM_RED_FEATURES"],
+        num_labels=param["NUM_LABELS"]
     ).to(DEVICE)
 
-    optimizer_mlegcn = th.optim.Adam(model_mlegcn.parameters(), lr=param['LR'])
+    optimizer_mlegcn = th.optim.Adam(model_mlegcn.parameters(), lr=param["LR"])
 
     mlegcn = {'model': model_mlegcn,
               'optimizer': optimizer_mlegcn}
@@ -104,9 +104,9 @@ def initialize_models(param):
 
 
 def train(models, train_dataset, embeddings, loss_fn, params):
-    models['tmf']['model'].train()
-    models['tmf_dw']['model'].train()
-    models['mlegcn']['model'].train()
+    models["tmf"]["model"].train()
+    models["tmf_dw"]["model"].train()
+    models["mlegcn"]["model"].train()
 
     losses = {'tmf' : [],
               'tmf_dw' : [],
@@ -123,7 +123,7 @@ def train(models, train_dataset, embeddings, loss_fn, params):
                'ap_macro':ap_macro,
                'auc_roc':auc_roc}
 
-    for epoch in tqdm(range(params['EPOCHS'])):
+    for epoch in tqdm(range(params["EPOCHS"])):
         total_loss_tmf = 0
         total_loss_tmf_dw = 0
         total_loss_mlegcn = 0
@@ -132,9 +132,9 @@ def train(models, train_dataset, embeddings, loss_fn, params):
 
         #training 
 
-        models['tmf']['model'].train()
-        models['tmf_dw']['model'].train()
-        models['mlegcn']['model'].train()
+        models["tmf"]["model"].train()
+        models["tmf_dw"]["model"].train()
+        models["mlegcn"]["model"].train()
 
 
         for time, snapshot in enumerate(train_dataset):
@@ -143,13 +143,13 @@ def train(models, train_dataset, embeddings, loss_fn, params):
             embedding = embeddings[time].to(DEVICE)
             snapshot = snapshot.to(DEVICE)
 
-            models['tmf']['optimizer'].zero_grad()
-            models['tmf_dw']['optimizer'].zero_grad()
-            models['mlegcn']['optimizer'].zero_grad()
+            models["tmf"]["optimizer"].zero_grad()
+            models["tmf_dw"]["optimizer"].zero_grad()
+            models["mlegcn"]["optimizer"].zero_grad()
 
-            y_hat_tmf = models['tmf']['model'](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr)
-            y_hat_tmf_dw = models['tmf_dw']['model'](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr, embedding)
-            y_hat_mlegcn = models['mlegcn']['model'](snapshot.x, snapshot.edge_index, snapshot.edge_attr)
+            y_hat_tmf = models["tmf"]["model"](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr)
+            y_hat_tmf_dw = models["tmf_dw"]["model"](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr, embedding)
+            y_hat_mlegcn = models["mlegcn"]["model"](snapshot.x, snapshot.edge_index, snapshot.edge_attr)
 
             loss_tmf = loss_fn(y_hat_tmf, snapshot.y)
             loss_tmf_dw = loss_fn(y_hat_tmf_dw, snapshot.y)
@@ -159,36 +159,36 @@ def train(models, train_dataset, embeddings, loss_fn, params):
             loss_tmf_dw.backward()
             loss_mlegcn.backward()
 
-            models['tmf']['optimizer'].step()
-            models['tmf_dw']['optimizer'].step()
-            models['mlegcn']['optimizer'].step()
+            models["tmf"]["optimizer"].step()
+            models["tmf_dw"]["optimizer"].step()
+            models["mlegcn"]["optimizer"].step()
 
             total_loss_tmf += loss_tmf.cpu().item()
             total_loss_tmf_dw += loss_tmf_dw.cpu().item()
             total_loss_mlegcn += loss_mlegcn.cpu().item()
 
-        results['train_loss']['tmf'].append(total_loss_tmf / train_dataset.snapshot_count)
-        results['train_loss']['tmf_dw'].append(total_loss_tmf_dw / train_dataset.snapshot_count)
-        results['train_loss']['mlegcn'].append(total_loss_mlegcn / train_dataset.snapshot_count)
+        results["train_loss"]["tmf"].append(total_loss_tmf / train_dataset.snapshot_count)
+        results["train_loss"]["tmf_dw"].append(total_loss_tmf_dw / train_dataset.snapshot_count)
+        results["train_loss"]["mlegcn"].append(total_loss_mlegcn / train_dataset.snapshot_count)
 
         #training eval
         eval_results = evaluate(models, train_dataset, embeddings, loss_fn, params)
 
-        results['f1_micro']['tmf'].append(eval_results['f1_micro']['tmf'])
-        results['f1_micro']['tmf_dw'].append(eval_results['f1_micro']['tmf_dw'])
-        results['f1_micro']['mlegcn'].append(eval_results['f1_micro']['mlegcn'])
+        results["f1_micro"]["tmf"].append(eval_results["f1_micro"]["tmf"])
+        results["f1_micro"]["tmf_dw"].append(eval_results["f1_micro"]["tmf_dw"])
+        results["f1_micro"]["mlegcn"].append(eval_results["f1_micro"]["mlegcn"])
 
-        results['f1_macro']['tmf'].append(eval_results['f1_macro']['tmf'])
-        results['f1_macro']['tmf_dw'].append(eval_results['f1_macro']['tmf_dw'])
-        results['f1_macro']['mlegcn'].append(eval_results['f1_macro']['mlegcn'])
+        results["f1_macro"]["tmf"].append(eval_results["f1_macro"]["tmf"])
+        results["f1_macro"]["tmf_dw"].append(eval_results["f1_macro"]["tmf_dw"])
+        results["f1_macro"]["mlegcn"].append(eval_results["f1_macro"]["mlegcn"])
 
-        results['ap_macro']['tmf'].append(eval_results['ap_macro']['tmf'])
-        results['ap_macro']['tmf_dw'].append(eval_results['ap_macro']['tmf_dw'])
-        results['ap_macro']['mlegcn'].append(eval_results['ap_macro']['mlegcn'])
+        results["ap_macro"]["tmf"].append(eval_results["ap_macro"]["tmf"])
+        results["ap_macro"]["tmf_dw"].append(eval_results["ap_macro"]["tmf_dw"])
+        results["ap_macro"]["mlegcn"].append(eval_results["ap_macro"]["mlegcn"])
 
-        results['auc_roc']['tmf'].append(eval_results['auc_roc']['tmf'])
-        results['auc_roc']['tmf_dw'].append(eval_results['auc_roc']['tmf_dw'])
-        results['auc_roc']['mlegcn'].append(eval_results['auc_roc']['mlegcn'])
+        results["auc_roc"]["tmf"].append(eval_results["auc_roc"]["tmf"])
+        results["auc_roc"]["tmf_dw"].append(eval_results["auc_roc"]["tmf_dw"])
+        results["auc_roc"]["mlegcn"].append(eval_results["auc_roc"]["mlegcn"])
 
     return results
 
@@ -209,9 +209,9 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
                'auc_roc':auc_roc}
 
     # evaluate
-    models['tmf']['model'].eval()
-    models['tmf_dw']['model'].eval()
-    models['mlegcn']['model'].eval()
+    models["tmf"]["model"].eval()
+    models["tmf_dw"]["model"].eval()
+    models["mlegcn"]["model"].eval()
 
     total_loss_tmf = 0
     total_loss_tmf_dw = 0
@@ -228,9 +228,9 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
             embedding = embeddings[time].to(DEVICE)
             snapshot = snapshot.to(DEVICE)
 
-            y_hat_tmf = models['tmf']['model'](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr)
-            y_hat_tmf_dw = models['tmf_dw']['model'](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr, embedding)
-            y_hat_mlegcn = models['mlegcn']['model'](snapshot.x, snapshot.edge_index, snapshot.edge_attr)
+            y_hat_tmf = models["tmf"]["model"](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr)
+            y_hat_tmf_dw = models["tmf_dw"]["model"](snapshot.x, snapshot.y, snapshot.edge_index, snapshot.edge_attr, embedding)
+            y_hat_mlegcn = models["mlegcn"]["model"](snapshot.x, snapshot.edge_index, snapshot.edge_attr)
 
             loss_tmf = loss_fn(y_hat_tmf, snapshot.y)
             loss_tmf_dw = loss_fn(y_hat_tmf_dw, snapshot.y)
@@ -241,9 +241,9 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
             total_loss_mlegcn += loss_mlegcn.cpu().item()
 
             # Apply sigmoid and threshold to get predictions
-            preds_tmf = (th.sigmoid(y_hat_tmf) > param['THRESHOLD']).float()
-            preds_tmf_dw = (th.sigmoid(y_hat_tmf_dw) > param['THRESHOLD']).float()
-            preds_mlegcn = (th.sigmoid(y_hat_mlegcn) > param['THRESHOLD']).float()
+            preds_tmf = (th.sigmoid(y_hat_tmf) > param["THRESHOLD"]).float()
+            preds_tmf_dw = (th.sigmoid(y_hat_tmf_dw) > param["THRESHOLD"]).float()
+            preds_mlegcn = (th.sigmoid(y_hat_mlegcn) > param["THRESHOLD"]).float()
 
             all_preds_tmf.append(preds_tmf.cpu())
             all_preds_tmf_dw.append(preds_tmf_dw.cpu())
@@ -251,9 +251,9 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
 
             all_targets.append(snapshot.y.cpu())
 
-    results['test_loss']['tmf'] = total_loss_tmf / test_dataset.snapshot_count
-    results['test_loss']['tmf_dw'] = total_loss_tmf_dw / test_dataset.snapshot_count
-    results['test_loss']['mlegcn'] = total_loss_mlegcn / test_dataset.snapshot_count
+    results["test_loss"]["tmf"] = total_loss_tmf / test_dataset.snapshot_count
+    results["test_loss"]["tmf_dw"] = total_loss_tmf_dw / test_dataset.snapshot_count
+    results["test_loss"]["mlegcn"] = total_loss_mlegcn / test_dataset.snapshot_count
 
     # Concatenate all batches and compute metrics
     all_preds_tmf = th.cat(all_preds_tmf, dim=0).numpy()
@@ -262,9 +262,9 @@ def evaluate(models, test_dataset, embeddings, loss_fn, param):
 
     all_targets = th.cat(all_targets, dim=0).numpy()
 
-    results['f1_macro']['tmf'], results['f1_micro']['tmf'], results['auc_roc']['tmf'], results['ap_macro']['tmf'] = metrics(all_targets, all_preds_tmf)
-    results['f1_macro']['tmf_dw'], results['f1_micro']['tmf_dw'], results['auc_roc']['tmf_dw'], results['ap_macro']['tmf_dw'] = metrics(all_targets, all_preds_tmf_dw)
-    results['f1_macro']['mlegcn'], results['f1_micro']['mlegcn'], results['auc_roc']['mlegcn'], results['ap_macro']['mlegcn'] = metrics(all_targets, all_preds_mlegcn)
+    results["f1_macro"]["tmf"], results["f1_micro"]["tmf"], results["auc_roc"]["tmf"], results["ap_macro"]["tmf"] = metrics(all_targets, all_preds_tmf)
+    results["f1_macro"]["tmf_dw"], results["f1_micro"]["tmf_dw"], results["auc_roc"]["tmf_dw"], results["ap_macro"]["tmf_dw"] = metrics(all_targets, all_preds_tmf_dw)
+    results["f1_macro"]["mlegcn"], results["f1_micro"]["mlegcn"], results["auc_roc"]["mlegcn"], results["ap_macro"]["mlegcn"] = metrics(all_targets, all_preds_mlegcn)
 
     return results
 
@@ -287,50 +287,50 @@ def experiment_single_run(param, datasets, display = True):
         'test-auc roc':None,
     }
 
-    train_dataset = datasets['train_data']
-    test_dataset = datasets['test_data']
-    train_embedding = datasets['train_emb']
-    test_embedding = datasets['test_emb']
+    train_dataset = datasets["train_data"]
+    test_dataset = datasets["test_data"]
+    train_embedding = datasets["train_emb"]
+    test_embedding = datasets["test_emb"]
 
     # setup models
     models, loss = initialize_models(param)
 
     # train models
     train_results = train(models, train_dataset, train_embedding, loss, param)
-    results['train-loss'] = train_results['train_loss']
-    results['train-f1 macro'] = train_results['f1_macro']
-    results['train-f1 micro'] = train_results['f1_micro']
-    results['train-ap macro'] = train_results['ap_macro']
-    results['train-auc roc'] = train_results['auc_roc']
+    results["train-loss"] = train_results["train_loss"]
+    results["train-f1 macro"] = train_results["f1_macro"]
+    results["train-f1 micro"] = train_results["f1_micro"]
+    results["train-ap macro"] = train_results["ap_macro"]
+    results["train-auc roc"] = train_results["auc_roc"]
 
     # test models
     test_results = evaluate(models, test_dataset, test_embedding, loss, param)
 
-    results['test-loss'] = test_results['test_loss']
-    results['test-f1 macro'] = test_results['f1_macro']
-    results['test-f1 micro'] = test_results['f1_micro']
-    results['test-ap macro'] = test_results['ap_macro']
-    results['test-auc roc'] = test_results['auc_roc']
+    results["test-loss"] = test_results["test_loss"]
+    results["test-f1 macro"] = test_results["f1_macro"]
+    results["test-f1 micro"] = test_results["f1_micro"]
+    results["test-ap macro"] = test_results["ap_macro"]
+    results["test-auc roc"] = test_results["auc_roc"]
 
     if display:
-        out  = (f"Temporal MultiFix: train-loss:{results['train-loss']['tmf'][-1]:.4f}, "
-                + f"test-loss:{results['test-loss']['tmf']:.4f}, "
-                + f"test-f1-macro:{results['test-f1 macro']['tmf']:.4f}, "
-                + f"test-f1-micro:{results['test-f1 micro']['tmf']:.4f}, "
-                + f"test-AP-macro:{results['test-ap macro']['tmf']:.4f}, "
-                + f"test-AUC-ROC:{results['test-auc roc']['tmf']:.4f} \n"
-                + f"Temporal MultiFix Deepwalk: train-loss:{results['train-loss']['tmf_dw'][-1]:.4f}, "
-                + f"test-loss:{results['test-loss']['tmf_dw']:.4f}, "
-                + f"test-f1-macro:{results['test-f1 macro']['tmf_dw']:.4f}, "
-                + f"test-f1-micro:{results['test-f1 micro']['tmf_dw']:.4f}, "
-                + f"test-AP-macro:{results['test-ap macro']['tmf_dw']:.4f}, "
-                + f"test-AUC-ROC:{results['test-auc roc']['tmf_dw']:.4f} \n"
-                + f"MultiFix Evolve GCN: train-loss:{results['train-loss']['mlegcn'][-1]:.4f}, "
-                + f"test-loss:{results['test-loss']['mlegcn']:.4f}, "
-                + f"test-f1-macro:{results['test-f1 macro']['mlegcn']:.4f}, "
-                + f"test-f1-micro:{results['test-f1 micro']['mlegcn']:.4f}, "
-                + f"test-AP-macro:{results['test-ap macro']['mlegcn']:.4f}, "
-                + f"test-AUC-ROC:{results['test-auc roc']['mlegcn']:.4f} \n"
+        out  = (f'Temporal MultiFix: train-loss:{results["train-loss"]["tmf"][-1]:.4f}, '
+                + f'test-loss:{results["test-loss"]["tmf"]:.4f}, '
+                + f'test-f1-macro:{results["test-f1 macro"]["tmf"]:.4f}, '
+                + f'test-f1-micro:{results["test-f1 micro"]["tmf"]:.4f}, '
+                + f'test-AP-macro:{results["test-ap macro"]["tmf"]:.4f}, '
+                + f'test-AUC-ROC:{results["test-auc roc"]["tmf"]:.4f} \n'
+                + f'Temporal MultiFix Deepwalk: train-loss:{results["train-loss"]["tmf_dw"][-1]:.4f}, '
+                + f'test-loss:{results["test-loss"]["tmf_dw"]:.4f}, '
+                + f'test-f1-macro:{results["test-f1 macro"]["tmf_dw"]:.4f}, '
+                + f'test-f1-micro:{results["test-f1 micro"]["tmf_dw"]:.4f}, '
+                + f'test-AP-macro:{results["test-ap macro"]["tmf_dw"]:.4f}, '
+                + f'test-AUC-ROC:{results["test-auc roc"]["tmf_dw"]:.4f} \n'
+                + f'MultiFix Evolve GCN: train-loss:{results["train-loss"]["mlegcn"][-1]:.4f}, '
+                + f'test-loss:{results["test-loss"]["mlegcn"]:.4f}, '
+                + f'test-f1-macro:{results["test-f1 macro"]["mlegcn"]:.4f}, '
+                + f'test-f1-micro:{results["test-f1 micro"]["mlegcn"]:.4f}, '
+                + f'test-AP-macro:{results["test-ap macro"]["mlegcn"]:.4f}, '
+                + f'test-AUC-ROC:{results["test-auc roc"]["mlegcn"]:.4f} \n'
                 )
 
         print(out)
@@ -352,7 +352,7 @@ def experiment_repeats(param, datasets, display=True):
     test_ap_macro_tmf = []
     test_auc_roc_tmf = []
 
-    inter_homophily = datasets['inter_homophily']
+    inter_homophily = datasets["inter_homophily"]
 
     train_loss_tmf_dw = []
     train_f1_macro_tmf_dw = []
@@ -376,45 +376,45 @@ def experiment_repeats(param, datasets, display=True):
     test_ap_macro_mlegcn = []
     test_auc_roc_mlegcn = []
 
-    for r in range(param['REPEATS']):
+    for r in range(param["REPEATS"]):
         print(f'Repeat: {r}')
 
         results = experiment_single_run(param, datasets, display)
 
-        # inter_homophily.append(results['inter-homophily'])
+        # inter_homophily.append(results["inter-homophily"])
 
-        train_loss_tmf.append(results['train-loss']['tmf'])
-        train_f1_macro_tmf.append(results['train-f1 macro']['tmf'])
-        train_f1_micro_tmf.append(results['train-f1 micro']['tmf'])
-        train_ap_macro_tmf.append(results['train-ap macro']['tmf'])
-        train_auc_roc_tmf.append(results['train-auc roc']['tmf'])
-        test_loss_tmf.append(results['test-loss']['tmf'])
-        test_f1_macro_tmf.append(results['test-f1 macro']['tmf'])
-        test_f1_micro_tmf.append(results['test-f1 micro']['tmf'])
-        test_ap_macro_tmf.append(results['test-ap macro']['tmf'])
-        test_auc_roc_tmf.append(results['test-auc roc']['tmf'])
+        train_loss_tmf.append(results["train-loss"]["tmf"])
+        train_f1_macro_tmf.append(results["train-f1 macro"]["tmf"])
+        train_f1_micro_tmf.append(results["train-f1 micro"]["tmf"])
+        train_ap_macro_tmf.append(results["train-ap macro"]["tmf"])
+        train_auc_roc_tmf.append(results["train-auc roc"]["tmf"])
+        test_loss_tmf.append(results["test-loss"]["tmf"])
+        test_f1_macro_tmf.append(results["test-f1 macro"]["tmf"])
+        test_f1_micro_tmf.append(results["test-f1 micro"]["tmf"])
+        test_ap_macro_tmf.append(results["test-ap macro"]["tmf"])
+        test_auc_roc_tmf.append(results["test-auc roc"]["tmf"])
 
-        train_loss_tmf_dw.append(results['train-loss']['tmf_dw'])
-        train_f1_macro_tmf_dw.append(results['train-f1 macro']['tmf_dw'])
-        train_f1_micro_tmf_dw.append(results['train-f1 micro']['tmf_dw'])
-        train_ap_macro_tmf_dw.append(results['train-ap macro']['tmf_dw'])
-        train_auc_roc_tmf_dw.append(results['train-auc roc']['tmf_dw'])
-        test_loss_tmf_dw.append(results['test-loss']['tmf_dw'])
-        test_f1_macro_tmf_dw.append(results['test-f1 macro']['tmf_dw'])
-        test_f1_micro_tmf_dw.append(results['test-f1 micro']['tmf_dw'])
-        test_ap_macro_tmf_dw.append(results['test-ap macro']['tmf_dw'])
-        test_auc_roc_tmf_dw.append(results['test-auc roc']['tmf_dw'])
+        train_loss_tmf_dw.append(results["train-loss"]["tmf_dw"])
+        train_f1_macro_tmf_dw.append(results["train-f1 macro"]["tmf_dw"])
+        train_f1_micro_tmf_dw.append(results["train-f1 micro"]["tmf_dw"])
+        train_ap_macro_tmf_dw.append(results["train-ap macro"]["tmf_dw"])
+        train_auc_roc_tmf_dw.append(results["train-auc roc"]["tmf_dw"])
+        test_loss_tmf_dw.append(results["test-loss"]["tmf_dw"])
+        test_f1_macro_tmf_dw.append(results["test-f1 macro"]["tmf_dw"])
+        test_f1_micro_tmf_dw.append(results["test-f1 micro"]["tmf_dw"])
+        test_ap_macro_tmf_dw.append(results["test-ap macro"]["tmf_dw"])
+        test_auc_roc_tmf_dw.append(results["test-auc roc"]["tmf_dw"])
 
-        train_loss_mlegcn.append(results['train-loss']['mlegcn'])
-        train_f1_macro_mlegcn.append(results['train-f1 macro']['mlegcn'])
-        train_f1_micro_mlegcn.append(results['train-f1 micro']['mlegcn'])
-        train_ap_macro_mlegcn.append(results['train-ap macro']['mlegcn'])
-        train_auc_roc_mlegcn.append(results['train-auc roc']['mlegcn'])
-        test_loss_mlegcn.append(results['test-loss']['mlegcn'])
-        test_f1_macro_mlegcn.append(results['test-f1 macro']['mlegcn'])
-        test_f1_micro_mlegcn.append(results['test-f1 micro']['mlegcn'])
-        test_ap_macro_mlegcn.append(results['test-ap macro']['mlegcn'])
-        test_auc_roc_mlegcn.append(results['test-auc roc']['mlegcn'])
+        train_loss_mlegcn.append(results["train-loss"]["mlegcn"])
+        train_f1_macro_mlegcn.append(results["train-f1 macro"]["mlegcn"])
+        train_f1_micro_mlegcn.append(results["train-f1 micro"]["mlegcn"])
+        train_ap_macro_mlegcn.append(results["train-ap macro"]["mlegcn"])
+        train_auc_roc_mlegcn.append(results["train-auc roc"]["mlegcn"])
+        test_loss_mlegcn.append(results["test-loss"]["mlegcn"])
+        test_f1_macro_mlegcn.append(results["test-f1 macro"]["mlegcn"])
+        test_f1_micro_mlegcn.append(results["test-f1 micro"]["mlegcn"])
+        test_ap_macro_mlegcn.append(results["test-ap macro"]["mlegcn"])
+        test_auc_roc_mlegcn.append(results["test-auc roc"]["mlegcn"])
 
 
     train_loss_tmf_mean = np.mean(np.array(train_loss_tmf)[:, -1])
@@ -482,8 +482,8 @@ def experiment_repeats(param, datasets, display=True):
 
         # save to txt
         # timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"{param['DATA_FILE']}_alpha{param['ALPHA']}.txt"
-        filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+        filename = f'{param["DATA_FILE"]}_alpha{param["ALPHA"]}.txt'
+        filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
 
         with open(filepath, "w") as file:
             file.write(out + str(param))
@@ -499,7 +499,7 @@ def experiment_repeats(param, datasets, display=True):
         for data_tmf, data_tmf_dw, data_mlegcn, title, imgname in curves:
 
             
-            x = range(param['EPOCHS'])
+            x = range(param["EPOCHS"])
             y_train_tmf = np.mean(np.array(data_tmf), axis=0) #size(R, E)
             y_train_tmf_std = np.std(np.array(data_tmf), axis=0)
             y_train_tmf_dw = np.mean(np.array(data_tmf_dw), axis=0)  # size(R, E)
@@ -515,13 +515,13 @@ def experiment_repeats(param, datasets, display=True):
 
             plt.xlabel("Epoch")
             plt.ylabel(f"{title} (mean ± std)")
-            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
             plt.grid(True)
             plt.legend()
             plt.tight_layout()
 
-            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}.png"
-            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}.png'
+            filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
             plt.savefig(filepath)
             plt.close()
             
@@ -536,13 +536,13 @@ def experiment_repeats(param, datasets, display=True):
 
             plt.xlabel("Epoch")
             plt.ylabel(f"{title} (mean ± std)")
-            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
             plt.grid(True)
             plt.legend()
             plt.tight_layout()
 
-            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}-1.png"
-            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}-1.png'
+            filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
             plt.savefig(filepath)
             plt.close()
 
@@ -556,13 +556,13 @@ def experiment_repeats(param, datasets, display=True):
 
             plt.xlabel("Epoch")
             plt.ylabel(f"{title} (mean ± std)")
-            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
             plt.grid(True)
             plt.ylim(0, 1)
             plt.legend()
             plt.tight_layout()
-            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}-zoom.png"
-            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}-zoom.png'
+            filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
             plt.savefig(filepath)
             plt.close()
 
@@ -577,13 +577,13 @@ def experiment_repeats(param, datasets, display=True):
 
             plt.xlabel("Epoch")
             plt.ylabel(f"{title} (mean ± std)")
-            plt.title(f'alpha={param['ALPHA']}, inter homophily={inter_homophily:.2f}')
+            plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
             plt.grid(True)
             plt.ylim(0, 1)
             plt.legend()
             plt.tight_layout()
-            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}-zoom-1.png"
-            filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
+            filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}-zoom-1.png'
+            filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
             plt.savefig(filepath)
             plt.close()
 
@@ -592,34 +592,34 @@ def experiment_repeats(param, datasets, display=True):
 def experiment_main(param):
     # setup export, establish folder to store all results
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    param['EXPERIMENT_PATH'] = os.path.join(param['EXPERIMENT_PATH'], timestamp)
-    os.makedirs(param['EXPERIMENT_PATH'], exist_ok=True)
+    param["EXPERIMENT_PATH"] = os.path.join(param["EXPERIMENT_PATH"], timestamp)
+    os.makedirs(param["EXPERIMENT_PATH"], exist_ok=True)
 
-    config = TemporalMultiLabelGeneratorConfig(m_rel=param['NUM_REL_FEATURES'],
-                                                m_irr=param['NUM_IRR_FEATURES'],
-                                                m_red=param['NUM_RED_FEATURES'],
-                                                q=param['NUM_LABELS'],
-                                                N=param['NUM_NODES'],
+    config = TemporalMultiLabelGeneratorConfig(m_rel=param["NUM_REL_FEATURES"],
+                                                m_irr=param["NUM_IRR_FEATURES"],
+                                                m_red=param["NUM_RED_FEATURES"],
+                                                q=param["NUM_LABELS"],
+                                                N=param["NUM_NODES"],
                                                 max_r=0.8,
-                                                min_r=((param['NUM_LABELS'] / 10) + 1) / param['NUM_LABELS'],
+                                                min_r=((param["NUM_LABELS"] / 10) + 1) / param["NUM_LABELS"],
                                                 mu=0,
                                                 b=0.05,
-                                                alpha=param['ALPHA'],
-                                                theta=np.pi / -(param['NUM_TIMESTEPS']//-2), #ceiling division
-                                                horizon=param['NUM_TIMESTEPS'],
+                                                alpha=param["ALPHA"],
+                                                theta=np.pi / -(param["NUM_TIMESTEPS"]//-2), #ceiling division
+                                                horizon=param["NUM_TIMESTEPS"],
                                                 sphere_sampling='polar',
                                                 data_sampling='global',
                                                 rotation_reference='data',
                                                 )
     
-    dataset_loader = DatasetLoader(config, param['EMBEDDING_DIM'], param['FILENAME'], param['BASEFILE'])
+    dataset_loader = DatasetLoader(config, param["EMBEDDING_DIM"], param["FILENAME"], param["BASEFILE"])
     
     # alphas = [5, 4, 3, 2, 1, 0]
     # alphas = [6, 7, 8, 9, 10]
     alphas = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-    for alpha in alphas:
+    for alpha in alphas[::-1]:
         # experiment 
-        param['ALPHA'] = alpha
+        param["ALPHA"] = alpha
         dataset_loader.generator.alpha = alpha
         train_dataset, test_dataset, train_embedding, test_embedding, inter_homophily, intra_homophily = load_data(dataset_loader, param)
         
