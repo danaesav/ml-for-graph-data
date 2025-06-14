@@ -27,7 +27,7 @@ PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'THRESHOLD' : 0.5,  # for classification
         'REPEATS' : 5,
         'ALPHA' : 5,
-        'EMBEDDING_DIM' : 128,
+        'EMBEDDING_DIM' : 64,
         'TRAIN_RATIO' : 0.8,
         'FILENAME' : '.\\data\\base_graphs',
         'BASEFILE' : '.\\data\\base_graphs_2025-06-12_02-49-34', #None for new base graph
@@ -128,8 +128,18 @@ def train(models, train_dataset, embeddings, loss_fn, params):
         total_loss_tmf_dw = 0
         total_loss_mlegcn = 0
 
+
+
         #training 
+
+        models['tmf']['model'].train()
+        models['tmf_dw']['model'].train()
+        models['mlegcn']['model'].train()
+
+
         for time, snapshot in enumerate(train_dataset):
+            
+
             embedding = embeddings[time].to(DEVICE)
             snapshot = snapshot.to(DEVICE)
 
@@ -488,7 +498,7 @@ def experiment_repeats(param, datasets, display=True):
 
         for data_tmf, data_tmf_dw, data_mlegcn, title, imgname in curves:
 
-            #plot 1
+            
             x = range(param['EPOCHS'])
             y_train_tmf = np.mean(np.array(data_tmf), axis=0) #size(R, E)
             y_train_tmf_std = np.std(np.array(data_tmf), axis=0)
@@ -497,6 +507,7 @@ def experiment_repeats(param, datasets, display=True):
             y_train_mlegcn = np.mean(np.array(data_mlegcn), axis=0)  # size(R, E)
             y_train_mlegcn_std = np.std(np.array(data_mlegcn), axis=0)
 
+            #plot 1
             plt.figure(figsize=(8, 5))
             plt.errorbar(x, y_train_tmf, yerr=y_train_tmf_std, fmt='o-', capsize=5, label='Temporal MultiFix', color='red')
             plt.errorbar(x, y_train_tmf_dw, yerr=y_train_tmf_dw_std, fmt='o-', capsize=5, label='Temporal MultiFix DW', color='blue')
@@ -509,20 +520,12 @@ def experiment_repeats(param, datasets, display=True):
             plt.legend()
             plt.tight_layout()
 
-            filename = f"{param['IMAGE_FILE']}_{imgname}.png"
+            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}.png"
             filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
             plt.savefig(filepath)
             plt.close()
             
             # plot 2
-            x = range(param['EPOCHS'])
-            y_train_tmf = np.mean(np.array(train_loss_tmf), axis=0) #size(R, E)
-            y_train_tmf_std = np.std(np.array(train_loss_tmf), axis=0)
-            y_train_tmf_dw = np.mean(np.array(train_loss_tmf_dw), axis=0)  # size(R, E)
-            y_train_tmf_dw_std = np.std(np.array(train_loss_tmf_dw), axis=0)
-            y_train_mlegcn = np.mean(np.array(train_loss_mlegcn), axis=0)  # size(R, E)
-            y_train_mlegcn_std = np.std(np.array(train_loss_mlegcn), axis=0)
-
             plt.figure(figsize=(8, 5))
             plt.plot(x, y_train_tmf, label='Temporal MultiFix', color='red')
             plt.fill_between(x, y_train_tmf - y_train_tmf_std, y_train_tmf + y_train_tmf_std, color='red', alpha=0.3, label='_nolegend_')
@@ -538,7 +541,7 @@ def experiment_repeats(param, datasets, display=True):
             plt.legend()
             plt.tight_layout()
 
-            filename = f"{param['IMAGE_FILE']}_{imgname}-1.png"
+            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}-1.png"
             filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
             plt.savefig(filepath)
             plt.close()
@@ -558,7 +561,7 @@ def experiment_repeats(param, datasets, display=True):
             plt.ylim(0, 1)
             plt.legend()
             plt.tight_layout()
-            filename = f"{param['IMAGE_FILE']}_{imgname}-zoom.png"
+            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}-zoom.png"
             filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
             plt.savefig(filepath)
             plt.close()
@@ -579,7 +582,7 @@ def experiment_repeats(param, datasets, display=True):
             plt.ylim(0, 1)
             plt.legend()
             plt.tight_layout()
-            filename = f"{param['IMAGE_FILE']}_{imgname}-zoom-1.png"
+            filename = f"{param['IMAGE_FILE']}_alpha{param['ALPHA']}_{imgname}-zoom-1.png"
             filepath = os.path.join(param['EXPERIMENT_PATH'], filename)
             plt.savefig(filepath)
             plt.close()
@@ -613,7 +616,7 @@ def experiment_main(param):
     
     # alphas = [5, 4, 3, 2, 1, 0]
     # alphas = [6, 7, 8, 9, 10]
-    alphas = [0.5, 1.5, 2.5]
+    alphas = [0, 0.5, 1, 1.5, 2, 2.5, 3]
     for alpha in alphas:
         # experiment 
         param['ALPHA'] = alpha
