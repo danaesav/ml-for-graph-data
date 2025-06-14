@@ -362,24 +362,35 @@ def experiment_single_run(param, datasets, display = True):
 
 def experiment_repeats(param, datasets, display=True):
 
+    inter_homophily = datasets["inter_homophily"]
+
+
     train_loss_tmf = []
     train_f1_macro_tmf = []
     train_f1_micro_tmf = []
     train_ap_macro_tmf = []
     train_auc_roc_tmf = []
+    validation_loss_tmf = []
+    validation_f1_macro_tmf = []
+    validation_f1_micro_tmf = []
+    validation_ap_macro_tmf = []
+    validation_auc_roc_tmf = []
     test_loss_tmf = []
     test_f1_macro_tmf = []
     test_f1_micro_tmf = []
     test_ap_macro_tmf = []
     test_auc_roc_tmf = []
 
-    inter_homophily = datasets["inter_homophily"]
-
     train_loss_tmf_dw = []
     train_f1_macro_tmf_dw = []
     train_f1_micro_tmf_dw = []
     train_ap_macro_tmf_dw = []
     train_auc_roc_tmf_dw = []
+    validation_loss_tmf_dw = []
+    validation_f1_macro_tmf_dw = []
+    validation_f1_micro_tmf_dw = []
+    validation_ap_macro_tmf_dw = []
+    validation_auc_roc_tmf_dw = []
     test_loss_tmf_dw = []
     test_f1_macro_tmf_dw = []
     test_f1_micro_tmf_dw = []
@@ -391,6 +402,11 @@ def experiment_repeats(param, datasets, display=True):
     train_f1_micro_mlegcn = []
     train_ap_macro_mlegcn = []
     train_auc_roc_mlegcn = []
+    validation_loss_mlegcn = []
+    validation_f1_macro_mlegcn = []
+    validation_f1_micro_mlegcn = []
+    validation_ap_macro_mlegcn = []
+    validation_auc_roc_mlegcn = []
     test_loss_mlegcn = []
     test_f1_macro_mlegcn = []
     test_f1_micro_mlegcn = []
@@ -402,13 +418,16 @@ def experiment_repeats(param, datasets, display=True):
 
         results = experiment_single_run(param, datasets, display)
 
-        # inter_homophily.append(results["inter-homophily"])
-
         train_loss_tmf.append(results["train-loss"]["tmf"])
         train_f1_macro_tmf.append(results["train-f1 macro"]["tmf"])
         train_f1_micro_tmf.append(results["train-f1 micro"]["tmf"])
         train_ap_macro_tmf.append(results["train-ap macro"]["tmf"])
         train_auc_roc_tmf.append(results["train-auc roc"]["tmf"])
+        validation_loss_tmf.append(results["validation-loss"]["tmf"])
+        validation_f1_macro_tmf.append(results["validation-f1 macro"]["tmf"])
+        validation_f1_micro_tmf.append(results["validation-f1 micro"]["tmf"])
+        validation_ap_macro_tmf.append(results["validation-ap macro"]["tmf"])
+        validation_auc_roc_tmf.append(results["validation-auc roc"]["tmf"])
         test_loss_tmf.append(results["test-loss"]["tmf"])
         test_f1_macro_tmf.append(results["test-f1 macro"]["tmf"])
         test_f1_micro_tmf.append(results["test-f1 micro"]["tmf"])
@@ -420,6 +439,11 @@ def experiment_repeats(param, datasets, display=True):
         train_f1_micro_tmf_dw.append(results["train-f1 micro"]["tmf_dw"])
         train_ap_macro_tmf_dw.append(results["train-ap macro"]["tmf_dw"])
         train_auc_roc_tmf_dw.append(results["train-auc roc"]["tmf_dw"])
+        validation_loss_tmf_dw.append(results["validation-loss"]["tmf_dw"])
+        validation_f1_macro_tmf_dw.append(results["validation-f1 macro"]["tmf_dw"])
+        validation_f1_micro_tmf_dw.append(results["validation-f1 micro"]["tmf_dw"])
+        validation_ap_macro_tmf_dw.append(results["validation-ap macro"]["tmf_dw"])
+        validation_auc_roc_tmf_dw.append(results["validation-auc roc"]["tmf_dw"])
         test_loss_tmf_dw.append(results["test-loss"]["tmf_dw"])
         test_f1_macro_tmf_dw.append(results["test-f1 macro"]["tmf_dw"])
         test_f1_micro_tmf_dw.append(results["test-f1 micro"]["tmf_dw"])
@@ -431,6 +455,11 @@ def experiment_repeats(param, datasets, display=True):
         train_f1_micro_mlegcn.append(results["train-f1 micro"]["mlegcn"])
         train_ap_macro_mlegcn.append(results["train-ap macro"]["mlegcn"])
         train_auc_roc_mlegcn.append(results["train-auc roc"]["mlegcn"])
+        validation_loss_mlegcn.append(results["validation-loss"]["mlegcn"])
+        validation_f1_macro_mlegcn.append(results["validation-f1 macro"]["mlegcn"])
+        validation_f1_micro_mlegcn.append(results["validation-f1 micro"]["mlegcn"])
+        validation_ap_macro_mlegcn.append(results["validation-ap macro"]["mlegcn"])
+        validation_auc_roc_mlegcn.append(results["validation-auc roc"]["mlegcn"])
         test_loss_mlegcn.append(results["test-loss"]["mlegcn"])
         test_f1_macro_mlegcn.append(results["test-f1 macro"]["mlegcn"])
         test_f1_micro_mlegcn.append(results["test-f1 micro"]["mlegcn"])
@@ -438,8 +467,6 @@ def experiment_repeats(param, datasets, display=True):
         test_auc_roc_mlegcn.append(results["test-auc roc"]["mlegcn"])
 
 
-    train_loss_tmf_mean = np.mean(np.array(train_loss_tmf)[:, -1])
-    train_loss_tmf_std = np.std(np.array(train_loss_tmf)[:, -1])
     test_loss_tmf_mean = np.mean(test_loss_tmf)
     test_loss_tmf_std = np.std(test_loss_tmf)
     test_f1_macro_tmf_mean = np.mean(test_f1_macro_tmf)
@@ -451,8 +478,6 @@ def experiment_repeats(param, datasets, display=True):
     test_auc_roc_tmf_mean = np.mean(test_auc_roc_tmf)
     test_auc_roc_tmf_std = np.std(test_auc_roc_tmf)
 
-    train_loss_tmf_dw_mean = np.mean(np.array(train_loss_tmf_dw)[:, -1])
-    train_loss_tmf_dw_std = np.std(np.array(train_loss_tmf_dw)[:, -1])
     test_loss_tmf_dw_mean = np.mean(test_loss_tmf_dw)
     test_loss_tmf_dw_std = np.std(test_loss_tmf_dw)
     test_f1_macro_tmf_dw_mean = np.mean(test_f1_macro_tmf_dw)
@@ -464,8 +489,6 @@ def experiment_repeats(param, datasets, display=True):
     test_auc_roc_tmf_dw_mean = np.mean(test_auc_roc_tmf_dw)
     test_auc_roc_tmf_dw_std = np.std(test_auc_roc_tmf_dw)
 
-    train_loss_mlegcn_mean = np.mean(np.array(train_loss_mlegcn)[:, -1])
-    train_loss_mlegcn_std = np.std(np.array(train_loss_mlegcn)[:, -1])
     test_loss_mlegcn_mean = np.mean(test_loss_mlegcn)
     test_loss_mlegcn_std = np.std(test_loss_mlegcn)
     test_f1_macro_mlegcn_mean = np.mean(test_f1_macro_mlegcn)
@@ -478,19 +501,19 @@ def experiment_repeats(param, datasets, display=True):
     test_auc_roc_mlegcn_std = np.std(test_auc_roc_mlegcn)
 
     if display:
-        out = (f"\nTemporal MultiFix: \ntrain-loss:{train_loss_tmf_mean:.4f}+-{train_loss_tmf_std:.4f}\n"
+        out = (f"\nTemporal MultiFix: \n"
                + f"test-loss:{test_loss_tmf_mean:.4f}+-{test_loss_tmf_std:.4f}\n"
                + f"test-f1-macro:{test_f1_macro_tmf_mean:.4f}+-{test_f1_macro_tmf_std:.4f}\n"
                + f"test-f1-micro:{test_f1_micro_tmf_mean:.4f}+-{test_f1_micro_tmf_std:.4f}\n"
                + f"test-AP-macro:{test_ap_macro_tmf_mean:.4f}+-{test_ap_macro_tmf_std:.4f}\n"
                + f"test-AUC-ROC:{test_auc_roc_tmf_mean:.4f}+-{test_auc_roc_tmf_std:.4f}\n"
-               + f"\nTemporal MultiFix Deepwalk: \ntrain-loss:{train_loss_tmf_dw_mean:.4f}+-{train_loss_tmf_dw_std:.4f}\n"
+               + f"\nTemporal MultiFix Deepwalk: \n"
                + f"test-loss:{test_loss_tmf_dw_mean:.4f}+-{test_loss_tmf_dw_std:.4f}\n"
                + f"test-f1-macro:{test_f1_macro_tmf_dw_mean:.4f}+-{test_f1_macro_tmf_dw_std:.4f}\n"
                + f"test-f1-micro:{test_f1_micro_tmf_dw_mean:.4f}+-{test_f1_micro_tmf_dw_std:.4f}\n"
                + f"test-AP-macro:{test_ap_macro_tmf_dw_mean:.4f}+-{test_ap_macro_tmf_dw_std:.4f}\n"
                + f"test-AUC-ROC:{test_auc_roc_tmf_dw_mean:.4f}+-{test_auc_roc_tmf_dw_std:.4f}\n"
-               + f"\nMulti-Label Evolve GCN: \ntrain-loss:{train_loss_mlegcn_mean:.4f}+-{train_loss_mlegcn_std:.4f}\n"
+               + f"\nMulti-Label Evolve GCN: \n"
                + f"test-loss:{test_loss_mlegcn_mean:.4f}+-{test_loss_mlegcn_std:.4f}\n"
                + f"test-f1-macro:{test_f1_macro_mlegcn_mean:.4f}+-{test_f1_macro_mlegcn_std:.4f}\n"
                + f"test-f1-micro:{test_f1_micro_mlegcn_mean:.4f}+-{test_f1_micro_mlegcn_std:.4f}\n"
@@ -510,100 +533,97 @@ def experiment_repeats(param, datasets, display=True):
             file.write(out + str(param))
 
         #plot training metrics curves over epochs
-        curves = [(train_loss_tmf, train_loss_tmf_dw, train_loss_mlegcn, 'Training Loss', 'loss-curve'),
-                  (train_f1_macro_tmf, train_f1_macro_tmf_dw, train_f1_macro_mlegcn, 'Training F1 Macro', 'f1-macro-curve'),
-                  (train_f1_micro_tmf, train_f1_micro_tmf_dw, train_f1_micro_mlegcn, 'Training F1 Micro', 'f1-micro-curve'),
-                  (train_ap_macro_tmf, train_ap_macro_tmf_dw, train_ap_macro_mlegcn, 'Training AP Macro', 'ap-macro-curve'),
-                  (train_auc_roc_tmf, train_auc_roc_tmf_dw, train_auc_roc_mlegcn, 'Training AUC ROC', 'auc-roc-curve')
+        curves = [(train_loss_tmf, train_loss_tmf_dw, train_loss_mlegcn, validation_loss_tmf, validation_loss_tmf_dw, validation_loss_mlegcn,'BCE Loss', 'loss-curve'),
+                  (train_f1_macro_tmf, train_f1_macro_tmf_dw, train_f1_macro_mlegcn, validation_f1_macro_tmf, validation_f1_macro_tmf_dw, validation_f1_macro_mlegcn, 'F1 Macro', 'f1-macro-curve'),
+                  (train_f1_micro_tmf, train_f1_micro_tmf_dw, train_f1_micro_mlegcn, validation_f1_micro_tmf, validation_f1_micro_tmf_dw, validation_f1_micro_mlegcn,'F1 Micro', 'f1-micro-curve'),
+                  (train_ap_macro_tmf, train_ap_macro_tmf_dw, train_ap_macro_mlegcn, validation_ap_macro_tmf, validation_ap_macro_tmf_dw, validation_ap_macro_mlegcn,'AP Macro', 'ap-macro-curve'),
+                  (train_auc_roc_tmf, train_auc_roc_tmf_dw, train_auc_roc_mlegcn, validation_auc_roc_tmf, validation_auc_roc_tmf_dw, validation_auc_roc_mlegcn,'AUC ROC', 'auc-roc-curve')
                   ]
 
-        for data_tmf, data_tmf_dw, data_mlegcn, title, imgname in curves:
+        for train_data_tmf, train_data_tmf_dw, train_data_mlegcn, validation_data_tmf, validation_data_tmf_dw, validation_data_mlegcn, title, imgname in curves:
 
             
             x = range(param["EPOCHS"])
-            y_train_tmf = np.mean(np.array(data_tmf), axis=0) #size(R, E)
-            y_train_tmf_std = np.std(np.array(data_tmf), axis=0)
-            y_train_tmf_dw = np.mean(np.array(data_tmf_dw), axis=0)  # size(R, E)
-            y_train_tmf_dw_std = np.std(np.array(data_tmf_dw), axis=0)
-            y_train_mlegcn = np.mean(np.array(data_mlegcn), axis=0)  # size(R, E)
-            y_train_mlegcn_std = np.std(np.array(data_mlegcn), axis=0)
 
-            #plot 1
+            y_train_tmf = np.mean(np.array(train_data_tmf), axis=0) #size(R, E)
+            y_train_tmf_std = np.std(np.array(train_data_tmf), axis=0)
+            y_train_tmf_dw = np.mean(np.array(train_data_tmf_dw), axis=0)  # size(R, E)
+            y_train_tmf_dw_std = np.std(np.array(train_data_tmf_dw), axis=0)
+            y_train_mlegcn = np.mean(np.array(train_data_mlegcn), axis=0)  # size(R, E)
+            y_train_mlegcn_std = np.std(np.array(train_data_mlegcn), axis=0)
+
+            y_validation_tmf = np.mean(np.array(validation_data_tmf), axis=0) #size(R, E)
+            y_validation_tmf_std = np.std(np.array(validation_data_tmf), axis=0)
+            y_validation_tmf_dw = np.mean(np.array(validation_data_tmf_dw), axis=0)  # size(R, E)
+            y_validation_tmf_dw_std = np.std(np.array(validation_data_tmf_dw), axis=0)
+            y_validation_mlegcn = np.mean(np.array(validation_data_mlegcn), axis=0)  # size(R, E)
+            y_validation_mlegcn_std = np.std(np.array(validation_data_mlegcn), axis=0)
+
+            # plot 1
             plt.figure(figsize=(8, 5))
-            plt.errorbar(x, y_train_tmf, yerr=y_train_tmf_std, fmt='o-', capsize=5, label='Temporal MultiFix', color='red')
-            plt.errorbar(x, y_train_tmf_dw, yerr=y_train_tmf_dw_std, fmt='o-', capsize=5, label='Temporal MultiFix DW', color='blue')
-            plt.errorbar(x, y_train_mlegcn, yerr=y_train_mlegcn_std, fmt='o-', capsize=5, label='MultiLabel Evolve GCN', color='green')
+
+            plt.plot(x, y_train_tmf, label='Temporal MultiFix (Train)', color='tab:red')
+            plt.fill_between(x, y_train_tmf - y_train_tmf_std, y_train_tmf + y_train_tmf_std, color='tab:red', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_tmf_dw, label='Temporal MultiFix DW (Train)', color='tab:blue')
+            plt.fill_between(x, y_train_tmf_dw - y_train_tmf_dw_std, y_train_tmf_dw + y_train_tmf_dw_std, color='tab:blue', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_mlegcn, label='MultiLabel Evolve GCN (Train)', color='tab:green')
+            plt.fill_between(x, y_train_mlegcn - y_train_mlegcn_std, y_train_mlegcn + y_train_mlegcn_std, color='tab:green', alpha=0.3, label='_nolegend_')
+
+            plt.plot(x, y_validation_tmf, fmt='--', label='Temporal MultiFix (Val)', color='tab:pink')
+            plt.fill_between(x, y_validation_tmf - y_validation_tmf_std, y_validation_tmf + y_validation_tmf_std, color='tab:pink', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_validation_tmf_dw, fmt='--', label='Temporal MultiFix DW (Val)', color='tab:cyan')
+            plt.fill_between(x, y_validation_tmf_dw - y_validation_tmf_dw_std, y_validation_tmf_dw + y_validation_tmf_dw_std, color='tab:cyan', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_validation_mlegcn, fmt='--', label='MultiLabel Evolve GCN (Val)', color='tab:olive')
+            plt.fill_between(x, y_validation_mlegcn - y_validation_mlegcn_std, y_validation_mlegcn + y_validation_mlegcn_std, color='tab:olive', alpha=0.3, label='_nolegend_')
 
             plt.xlabel("Epoch")
             plt.ylabel(f"{title} (mean ± std)")
             plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
             plt.grid(True)
-            plt.legend()
+
+            if title == 'BCE Loss':
+                plt.legend(loc='upper left', ncols=2)
+            else:
+                plt.legend(loc='lower right', ncols=2)
+
             plt.tight_layout()
 
             filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}.png'
             filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
             plt.savefig(filepath)
             plt.close()
-            
+
             # plot 2
             plt.figure(figsize=(8, 5))
-            plt.plot(x, y_train_tmf, label='Temporal MultiFix', color='red')
-            plt.fill_between(x, y_train_tmf - y_train_tmf_std, y_train_tmf + y_train_tmf_std, color='red', alpha=0.3, label='_nolegend_')
-            plt.plot(x, y_train_tmf_dw, label='Temporal MultiFix DW', color='blue')
-            plt.fill_between(x, y_train_tmf_dw - y_train_tmf_dw_std, y_train_tmf_dw + y_train_tmf_dw_std, color='blue', alpha=0.3, label='_nolegend_')
-            plt.plot(x, y_train_mlegcn, label='MultiLabel Evolve GCN', color='green')
-            plt.fill_between(x, y_train_mlegcn - y_train_mlegcn_std, y_train_mlegcn + y_train_mlegcn_std, color='green', alpha=0.3, label='_nolegend_')
+            
+            plt.plot(x, y_train_tmf, label='Temporal MultiFix (Train)', color='tab:red')
+            plt.fill_between(x, y_train_tmf - y_train_tmf_std, y_train_tmf + y_train_tmf_std, color='tab:red', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_tmf_dw, label='Temporal MultiFix DW (Train)', color='tab:blue')
+            plt.fill_between(x, y_train_tmf_dw - y_train_tmf_dw_std, y_train_tmf_dw + y_train_tmf_dw_std, color='tab:blue', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_train_mlegcn, label='MultiLabel Evolve GCN (Train)', color='tab:green')
+            plt.fill_between(x, y_train_mlegcn - y_train_mlegcn_std, y_train_mlegcn + y_train_mlegcn_std, color='tab:green', alpha=0.3, label='_nolegend_')
 
-            plt.xlabel("Epoch")
-            plt.ylabel(f"{title} (mean ± std)")
-            plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
-            plt.grid(True)
-            plt.legend()
-            plt.tight_layout()
-
-            filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}-1.png'
-            filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
-            plt.savefig(filepath)
-            plt.close()
-
-            # plot 3
-            plt.figure(figsize=(8, 5))
-            plt.errorbar(x, y_train_tmf, yerr=y_train_tmf_std, fmt='o-', capsize=5, label='Temporal MultiFix', color='red')
-            plt.errorbar(x, y_train_tmf_dw, yerr=y_train_tmf_dw_std, fmt='o-', capsize=5, label='Temporal MultiFix DW',
-                        color='blue')
-            plt.errorbar(x, y_train_mlegcn, yerr=y_train_mlegcn_std, fmt='o-', capsize=5, label='MultiLabel Evolve GCN',
-                        color='green')
+            plt.plot(x, y_validation_tmf, fmt='--', label='Temporal MultiFix (Val)', color='tab:pink')
+            plt.fill_between(x, y_validation_tmf - y_validation_tmf_std, y_validation_tmf + y_validation_tmf_std, color='tab:pink', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_validation_tmf_dw, fmt='--', label='Temporal MultiFix DW (Val)', color='tab:cyan')
+            plt.fill_between(x, y_validation_tmf_dw - y_validation_tmf_dw_std, y_validation_tmf_dw + y_validation_tmf_dw_std, color='tab:cyan', alpha=0.3, label='_nolegend_')
+            plt.plot(x, y_validation_mlegcn, fmt='--', label='MultiLabel Evolve GCN (Val)', color='tab:olive')
+            plt.fill_between(x, y_validation_mlegcn - y_validation_mlegcn_std, y_validation_mlegcn + y_validation_mlegcn_std, color='tab:olive', alpha=0.3, label='_nolegend_')
 
             plt.xlabel("Epoch")
             plt.ylabel(f"{title} (mean ± std)")
             plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
             plt.grid(True)
             plt.ylim(0, 1)
-            plt.legend()
+
+            if title == 'BCE Loss':
+                plt.legend(loc='upper left', ncols=2)
+            else:
+                plt.legend(loc='lower right', ncols=2)
+
             plt.tight_layout()
+
             filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}-zoom.png'
-            filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
-            plt.savefig(filepath)
-            plt.close()
-
-            # plot 4
-            plt.figure(figsize=(8, 5))
-            plt.plot(x, y_train_tmf, label='Temporal MultiFix', color='red')
-            plt.fill_between(x, y_train_tmf - y_train_tmf_std, y_train_tmf + y_train_tmf_std, color='red', alpha=0.3, label='_nolegend_')
-            plt.plot(x, y_train_tmf_dw, label='Temporal MultiFix DW', color='blue')
-            plt.fill_between(x, y_train_tmf_dw - y_train_tmf_dw_std, y_train_tmf_dw + y_train_tmf_dw_std, color='blue', alpha=0.3, label='_nolegend_')
-            plt.plot(x, y_train_mlegcn, label='MultiLabel Evolve GCN', color='green')
-            plt.fill_between(x, y_train_mlegcn - y_train_mlegcn_std, y_train_mlegcn + y_train_mlegcn_std, color='green', alpha=0.3, label='_nolegend_')
-
-            plt.xlabel("Epoch")
-            plt.ylabel(f"{title} (mean ± std)")
-            plt.title(f'alpha={param["ALPHA"]}, inter homophily={inter_homophily:.2f}')
-            plt.grid(True)
-            plt.ylim(0, 1)
-            plt.legend()
-            plt.tight_layout()
-            filename = f'{param["IMAGE_FILE"]}_alpha{param["ALPHA"]}_{imgname}-zoom-1.png'
             filepath = os.path.join(param["EXPERIMENT_PATH"], filename)
             plt.savefig(filepath)
             plt.close()
