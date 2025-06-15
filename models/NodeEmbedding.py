@@ -47,7 +47,7 @@ class NodeEmbedding:
         
 
         self.loader = self.model.loader(batch_size=128, shuffle=True)
-        self.optimizer = th.optim.SparseAdam(list(self.model.parameters()), lr=0.01)
+        self.optimizer = th.optim.SparseAdam(list(self.model.parameters()), lr=0.03)
 
         return self._n2v_embeddings(epoch)
     
