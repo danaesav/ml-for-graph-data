@@ -19,16 +19,17 @@ DEVICE = th.device('cuda' if th.cuda.is_available() else 'cpu')
 
 PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'NUM_REL_FEATURES' : 10,
-        'NUM_IRR_FEATURES' : 10,
+        'NUM_IRR_FEATURES' : 5,
         'NUM_RED_FEATURES' : 0,
         'NUM_LABELS' : 20,  # q = number of hyperspheres
         'NUM_TIMESTEPS' : 30,  # horizon
-        'EPOCHS' : 200,
-        'LR': 1e-2,
+        'EPOCHS' : 500,
+        'LR_MLEGCN': 2e-2,
+        'LR_TMF': 8e-3,
         'THRESHOLD' : 0.5,  # for classification
         'REPEATS' : 5,
         'ALPHA' : 5,
-        'EMBEDDING_DIM' : 64,
+        'EMBEDDING_DIM' : 32,
         'TRAIN_RATIO' : 0.6,
         'VALIDATION_RATIO' : 0.2,
         'TEST_RATIO' : 0.2,
@@ -84,7 +85,7 @@ def initialize_models(param):
         output_dim=param["NUM_LABELS"],
         dw_dim=param["EMBEDDING_DIM"],).to(DEVICE)
 
-    optimizer_tmf_dw = th.optim.Adam(model_tmf_dw.parameters(), lr=param["LR"])
+    optimizer_tmf_dw = th.optim.Adam(model_tmf_dw.parameters(), lr=param["LR_TMF"])
 
     tmf_dw = {'model':model_tmf_dw,
               'optimizer':optimizer_tmf_dw,
@@ -97,7 +98,7 @@ def initialize_models(param):
         num_of_nodes=param["NUM_NODES"],
         output_dim=param["NUM_LABELS"]).to(DEVICE)
 
-    optimizer_tmf = th.optim.Adam(model_tmf.parameters(), lr=param["LR"])
+    optimizer_tmf = th.optim.Adam(model_tmf.parameters(), lr=param["LR_TMF"])
 
     tmf = {'model': model_tmf,
           'optimizer': optimizer_tmf,
@@ -111,7 +112,7 @@ def initialize_models(param):
         num_labels=param["NUM_LABELS"]
     ).to(DEVICE)
 
-    optimizer_mlegcn = th.optim.Adam(model_mlegcn.parameters(), lr=param["LR"])
+    optimizer_mlegcn = th.optim.Adam(model_mlegcn.parameters(), lr=param["LR_MLEGCN"])
 
     mlegcn = {'model': model_mlegcn,
               'optimizer': optimizer_mlegcn,
@@ -280,7 +281,7 @@ def plotting(param, results, datasets, zoom = False):
 
 
         # plot 1
-        plt.figure(figsize=(8, 5))
+        plt.figure(figsize=(8, 5), dpi=600)
 
         train_loss_mean = np.mean(train_datas_tmf[i], axis=0)
         train_loss_std = np.std(train_datas_tmf[i], axis=0)
