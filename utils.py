@@ -1,6 +1,9 @@
 from sklearn.metrics import roc_auc_score, f1_score, average_precision_score
 import numpy as np
 
+from model_results import Metrics
+
+
 def eval_rocauc(y_true, y_pred):
     rocauc_list = []
 
@@ -26,4 +29,4 @@ def metrics(y_true, y_pred):
     roc_auc_score = eval_rocauc(y_true, y_pred)
 
 
-    return f1_macro, f1_micro, roc_auc_score, ap_macro
+    return Metrics(f1_macro=f1_macro, f1_micro=f1_micro, auc_roc=roc_auc_score, ap_macro=ap_macro)
