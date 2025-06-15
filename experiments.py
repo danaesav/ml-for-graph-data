@@ -19,7 +19,7 @@ DEVICE = th.device('cuda' if th.cuda.is_available() else 'cpu')
 
 PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'NUM_REL_FEATURES' : 10,
-        'NUM_IRR_FEATURES' : 5,
+        'NUM_IRR_FEATURES' : 10,
         'NUM_RED_FEATURES' : 0,
         'NUM_LABELS' : 20,  # q = number of hyperspheres
         'NUM_TIMESTEPS' : 30,  # horizon
