@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import optim
 from torch_geometric_temporal import temporal_signal_split
 import numpy as np
@@ -19,13 +20,13 @@ NUM_IRR_FEATURES = 10
 NUM_RED_FEATURES = 0
 NUM_LABELS = 20  # q = number of hyperspheres
 NUM_TIMESTEPS = 15  # horizon
-EPOCHS = 200
-LR = 1e-2
+EPOCHS = 1000
+LR = 2e-2
 THRESHOLD = 0.5  # for classification
 
 
 def load_data(config, train_ratio=0.6):
-    dataset, embeddings, *_ = DatasetLoader(config, 128).get_dataset()
+    dataset, embeddings, *_ = DatasetLoader(config, 64).get_dataset()
     train, val_test = temporal_signal_split(dataset, train_ratio=train_ratio)
     val, test = temporal_signal_split(val_test, train_ratio=(1-train_ratio)/2.0)
     return train, val, test
@@ -47,16 +48,29 @@ def train(model, train_dataset, optimizer, loss_fn, epochs=EPOCHS):
     model.train()
     losses = []
     for epoch in tqdm(range(epochs)):
-        total_loss = 0
+        loss = 0
+        optimizer.zero_grad()
+
         for snapshot in train_dataset:
-            optimizer.zero_grad()
+            
             y_hat = model(snapshot.x, snapshot.edge_index, snapshot.edge_attr)
-            loss = loss_fn(y_hat, snapshot.y)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-        avg_loss = total_loss / train_dataset.snapshot_count
-        losses.append(avg_loss)
+
+            # probs = torch.sigmoid(y_hat)
+            # preds = (probs > 0.5).float()
+
+            # loss += torch.mean(torch.square(snapshot.y - preds))
+            # loss += F.mse_loss(probs, snapshot.y)
+            loss += loss_fn(y_hat, snapshot.y)
+        
+        loss /= train_dataset.snapshot_count
+        # print(loss)
+
+        # optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+
+        losses.append(loss.item())
 
     return losses
 

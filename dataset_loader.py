@@ -8,7 +8,7 @@ from models.NodeEmbedding import NodeEmbedding
 from generator.HyperSpheres import HyperSpheres
 
 class DatasetLoader(object):
-    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim, filename, load=None):
+    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim, filename=None, load=None):
 
 
         self.generator = TemporalMultiLabelGenerator(config)
@@ -21,9 +21,10 @@ class DatasetLoader(object):
         else:
             self.base_hypersphere = self.generator.generate_hyper_spheres()
 
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            self.base_hypersphere.save_to_file(filename+'_'+timestamp)
-            print("Generated and saved new base file.")
+            if filename:
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                self.base_hypersphere.save_to_file(filename+'_'+timestamp)
+                print("Generated and saved new base file.")
 
 
         self.lags = config.horizon+1

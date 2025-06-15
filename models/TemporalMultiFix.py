@@ -37,36 +37,38 @@ class TemporalMultiFix(nn.Module):
         edge index should be [num features, num edges]
         edge weight should be [num edges]
         """
-        feature_embeddings = []
-        label_embeddings = []
+        # feature_embeddings = []
+        # label_embeddings = []
 
         # Feature propagation with evolving GCN
         for layer in self.feature_layers:
             x = layer(x, edge_index, edge_weight)
-        feature_embeddings.append(x)
+        FP = x
+        # feature_embeddings.append(x)
 
         # Label propagation with evolving GCN
         x_label = y
         for layer in self.label_layers:
             x_label = layer(x_label, edge_index, edge_weight)
-        label_embeddings.append(x_label)
+        LP = x_label
+        # label_embeddings.append(x_label)
 
         # Stack along time dimension
-        feature_embeddings = torch.stack(feature_embeddings, dim=0)
-        label_embeddings = torch.stack(label_embeddings, dim=0)
+        # feature_embeddings = torch.stack(feature_embeddings, dim=0)
+        # label_embeddings = torch.stack(label_embeddings, dim=0)
         # deep_walk_emb_seq = torch.stack(deep_walk_emb_seq, dim=0)
 
         # For simplicity, use last time step embeddings
-        final_feature_emb = feature_embeddings[-1]
-        final_label_emb = label_embeddings[-1]
+        # final_feature_emb = feature_embeddings[-1]
+        # final_label_emb = label_embeddings[-1]
         # TODO: final_dw_emb = deep_walk_emb_seq[-1]
 
         if self.use_embedding and deep_walk_emb is not None:
-            # TODO: x_fused = torch.cat((final_feature_emb, final_label_emb, final_dw_emb), dim=1)
+            # TODO: x_fused = torch.cat((final_xfeature_emb, final_label_emb, final_dw_emb), dim=1)
             # print(final_feature_emb.shape, final_label_emb.shape, deep_walk_emb.shape)
-            x_fused = torch.cat((final_feature_emb, final_label_emb, deep_walk_emb), dim=1)
+            x_fused = torch.cat((FP, LP, deep_walk_emb), dim=1)
         else:
-            x_fused = torch.cat([final_feature_emb, final_label_emb], dim=-1)
+            x_fused = torch.cat([FP, LP], dim=-1)
 
         output = self.fusion_layer(x_fused)
 
