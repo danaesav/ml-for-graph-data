@@ -194,7 +194,7 @@ def experiment(param, datasets, display = True):
     # run singular repeat of experiment on both models with same dataset
     # setup models
     models, loss = initialize_models(param)
-    model_names = ["Temporal MultiFix", "Temporal MultiFix Deepwalk", "MultiFix Evolve GCN"]
+    model_names = [f"Temporal MultiFix Deepwalk (EmbDim={embed})" for embed in param["EMBEDDING_DIM"]]
 
     train_dataset = [dataset_i["train_data"] for dataset_i in datasets]
     validation_dataset = [dataset_i["validation_data"] for dataset_i in datasets]
@@ -230,6 +230,11 @@ def experiment(param, datasets, display = True):
 
     print(out)
 
+    # print('testing\n\n')
+    # print(results)
+    # print()
+    # print(datasets)
+    
     plotting(param, results, datasets, False)
     plotting(param, results, datasets, True)
 
@@ -249,8 +254,8 @@ def plotting(param, results, datasets, zoom = False):
         # plot 1
         plt.figure(figsize=(8, 5), dpi=600)
 
-        colors = [("tab:blue", "tab:cyan"), ("tab:red","tab:pink")]
-        plot_names = [(f'Embedding size = {p} (Train)', f'Embedding size = [{p}] (Val)') for p in param["EMBEDDING_DIM"]]
+        colors = [("tab:blue", "tab:cyan"), ("tab:red","tab:pink"), ("tab:green", "tab:olive")]
+        plot_names = [(f'Embedding size = {p} (Train)', f'Embedding size = {p} (Val)') for p in param["EMBEDDING_DIM"]]
 
         for j, (_, model) in enumerate(results.items()):
             train_datas_tmf_dw = model.train_metrics.metric_list()
