@@ -27,7 +27,7 @@ PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'LR_MLEGCN': 2e-2,
         'LR_TMF': 8e-3,
         'THRESHOLD' : 0.5,  # for classification
-        'REPEATS' : 5, 
+        'REPEATS' : 3, 
         'ALPHA' : 5,
         'EMBEDDING_DIM' : [16,32,64], 
         'TRAIN_RATIO' : 0.6,
@@ -316,7 +316,7 @@ def experiment_main(param):
                                                 )
     
     
-    alphas = [0, 1, 2, 3]
+    alphas = [0, 1, 2]
     for alpha in alphas[::-1]:
         datasets = []
         # experiment 
