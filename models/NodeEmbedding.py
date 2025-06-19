@@ -3,6 +3,10 @@ import numpy as np
 from torch_geometric.nn import Node2Vec
 from gensim.models.word2vec import Word2Vec
 from typing import Literal, List
+from torch.nn import GRU
+from torch.nn.parameter import Parameter
+import matplotlib.pyplot as plt
+import gc
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -18,8 +22,10 @@ class NodeEmbedding:
         self.window_size = window_size
         self.walks_per_node = walks_per_node
 
+        self.init = True
 
-    def get_embedding(self, edge_index, adj_mat, method:Literal['Node2Vec', 'DeepWalk']):
+
+    def get_embedding(self, edge_index, adj_mat, method:Literal['Node2Vec', 'DeepWalk', 'Node2Vec Recurrent', 'Node2Vec ProdGraph']):
 
         # identify isolated nodes
         iso_nodes = np.where(adj_mat.sum(axis=-1) == 0)[0]
@@ -31,6 +37,14 @@ class NodeEmbedding:
         if method == 'Node2Vec':
             return self._node2vec(edge_index)
         
+        if method.startswith('Node2Vec'):
+            if method.find('Recurrent') != -1:
+                return self._node2vec_rec(edge_index)
+            
+            elif method.find('ProdGraph'):
+                return self._node2vec_prod(edge_index)
+            else:
+                return self._node2vec(edge_index)
         else:
             # this implementation is no good
             return self._deepwalk(adj_mat)
@@ -77,6 +91,98 @@ class NodeEmbedding:
             z = self.model()  # This returns the embeddings
             return z.cpu()
         
+
+    def _node2vec_rec(self, edge_index, epoch=50):
+
+        if self.init:
+            
+            self.gru = GRU(
+                input_size=self.embedding_dim, hidden_size=self.embedding_dim, num_layers=1
+            ).to(DEVICE)
+            # self.z_prev = None
+            self.W = None
+            self.init = False
+
+
+        self.model = Node2Vec(th.tensor(edge_index, dtype=th.long),
+                                embedding_dim=self.embedding_dim,
+                                walk_length=self.walk_length,
+                                context_size=self.window_size,
+                                walks_per_node=self.walks_per_node,
+                                sparse=True,
+                                ).to(DEVICE)
+        
+        self.loader = self.model.loader(batch_size=128, shuffle=True)
+        self.optimizer = th.optim.SparseAdam(list(self.model.parameters())+ list(self.gru.parameters()), lr=0.03)
+
+        return self._n2v_embeddings_rec(epoch)
+    
+    def _n2v_train_rec(self):
+
+        self.model.train()
+        self.gru.train()
+        total_loss = 0
+
+        for pos_rw, neg_rw in self.loader:
+
+            self.optimizer.zero_grad()
+
+            self.z_prev, self.W = self.gru(self.model(), self.W)
+            self.model.weight = self.z_prev
+
+            
+            loss = self.model.loss(pos_rw.to(DEVICE), neg_rw.to(DEVICE))
+            loss.backward()
+            self.optimizer.step()
+            total_loss += loss.item()
+
+
+        return total_loss / len(self.loader)
+    
+    def _n2v_embeddings_rec(self, epoch):
+
+        losses = []
+        for i in range(epoch):
+            loss = self._n2v_train_rec()
+            losses.append(loss)
+
+        # plt.figure()
+        # plt.plot(range(epoch), losses)
+        # plt.title(f'final loss = {losses[-1]:.2f}')
+        # plt.grid()
+        # plt.show(block=False)
+
+            gc.collect()
+            th.cuda.empty_cache()
+            th.cuda.ipc_collect()
+
+        with th.no_grad():
+            self.model.eval()
+            self.gru.eval()
+            z, _ = self.gru(self.model(), self.W)
+            return z.cpu()
+
+    def _node2vec_prod(self, edge_index, epoch=50):
+        # assume edge_index here is [e1, ..., eT] of edge indices
+        # first make cartesian product graph 
+        prodgraph = []
+
+        # for t in 
+
+
+        self.model = Node2Vec(th.tensor(edge_index, dtype=th.long),
+                              embedding_dim=self.embedding_dim,
+                              walk_length=self.walk_length,
+                              context_size=self.window_size,
+                              walks_per_node=self.walks_per_node,
+                              sparse=True,
+                              ).to(DEVICE)
+        
+
+        self.loader = self.model.loader(batch_size=128, shuffle=True)
+        self.optimizer = th.optim.SparseAdam(list(self.model.parameters()), lr=0.03)
+
+        return self._n2v_embeddings(epoch)
 
 
     def _deepwalk(self, adj_mat):

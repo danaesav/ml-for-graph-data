@@ -2,13 +2,14 @@ import numpy as np
 import torch as th
 import os
 from datetime import datetime
+from typing import Literal
 from torch_geometric_temporal import DynamicGraphTemporalSignal
 from generator.temporal_multi_label_generator import TemporalMultiLabelGenerator, TemporalMultiLabelGeneratorConfig
 from models.NodeEmbedding import NodeEmbedding
 from generator.HyperSpheres import HyperSpheres
 
 class DatasetLoader(object):
-    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim, filename=None, load=None):
+    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim, embedding_method:Literal['Node2Vec', 'DeepWalk', 'Node2Vec Recurrent']='Node2Vec', filename=None, load=None):
 
 
         self.generator = TemporalMultiLabelGenerator(config)
@@ -29,6 +30,7 @@ class DatasetLoader(object):
 
         self.lags = config.horizon+1
         self.embedder = NodeEmbedding(embedding_dim=embedding_dim)
+        self.embedding_method = embedding_method
 
     
     # def generate_node_embeddings(self, edge_index):
@@ -77,7 +79,7 @@ class DatasetLoader(object):
             targets.append(ths.temporal_hyper_spheres[t].y_data)
 
             # --- Node embedding ---
-            embedding_t = self.embedder.get_embedding(edge_index_t, adj_mat_t, 'Node2Vec')
+            embedding_t = self.embedder.get_embedding(edge_index_t, adj_mat_t, self.embedding_method)
             # print(edge_index_t.shape, adj_mat_t.shape ,embedding_t.shape)
             embeddings.append(embedding_t)
 
