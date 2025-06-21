@@ -316,7 +316,7 @@ def experiment_main(param):
                                                 )
     
     
-    alphas = [0.5, 1.5, 2.5]
+    alphas = [3]
     for alpha in alphas[::-1]:
         datasets = []
         # experiment 
