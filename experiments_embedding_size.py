@@ -29,7 +29,7 @@ PARAM = {'NUM_NODES' : 3000,  # Must match N in generator config
         'THRESHOLD' : 0.5,  # for classification
         'REPEATS' : 3, 
         'ALPHA' : 5,
-        'EMBEDDING_DIM' : [16,32,64], 
+        'EMBEDDING_DIM' : [16], #[16,32,64], 
         'TRAIN_RATIO' : 0.6,
         'VALIDATION_RATIO' : 0.2,
         'TEST_RATIO' : 0.2,
@@ -316,13 +316,13 @@ def experiment_main(param):
                                                 )
     
     
-    alphas = [0, 1, 2]
+    alphas = [0.5, 1.5, 2.5]
     for alpha in alphas[::-1]:
         datasets = []
         # experiment 
         param["ALPHA"] = alpha
         for embed in param["EMBEDDING_DIM"]:
-            dataset_loader = DatasetLoader(config, embed, param["FILENAME"], param["BASEFILE"])
+            dataset_loader = DatasetLoader(config, embed, filename=param["FILENAME"], load=param["BASEFILE"])
             dataset_loader.generator.alpha = alpha
             datasets.append(load_data(dataset_loader, param))
         

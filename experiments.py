@@ -219,7 +219,7 @@ def experiment(param, datasets, display = True):
     # run singular repeat of experiment on both models with same dataset
     # setup models
     models, loss = initialize_models(param)
-    model_names = ["Temporal MultiFix", "Temporal MultiFix Deepwalk", "MultiFix Evolve GCN"]
+    model_names = ["Temporal MultiFix", "MultiLabel Evolve GCN", "Temporal MultiFix Deepwalk"]
 
     train_dataset = datasets["train_data"]
     validation_dataset = datasets["validation_data"]
