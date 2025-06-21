@@ -1,0 +1,10 @@
+
+Temporal MultiFix Deepwalk (EmbDim=16): 
+test-loss:0.1567+-0.0399
+test-f1-macro:0.7417+-0.0244
+test-f1-micro:0.9428+-0.0146
+test-AP-macro:0.7108+-0.0284
+test-AUC-ROC:0.8432+-0.0208
+
+ Dataset Inter Homophily:0.5000
+{'NUM_NODES': 3000, 'NUM_REL_FEATURES': 10, 'NUM_IRR_FEATURES': 10, 'NUM_RED_FEATURES': 0, 'NUM_LABELS': 20, 'NUM_TIMESTEPS': 30, 'EPOCHS': 500, 'LR_MLEGCN': 0.02, 'LR_TMF': 0.008, 'THRESHOLD': 0.5, 'REPEATS': 3, 'ALPHA': 0.5, 'EMBEDDING_DIM': [16], 'TRAIN_RATIO': 0.6, 'VALIDATION_RATIO': 0.2, 'TEST_RATIO': 0.2, 'FILENAME': '.\\data\\base_graphs', 'BASEFILE': '.\\data\\base_graphs_2025-06-12_02-49-34', 'EXPERIMENT_PATH': '.\\data\\2025-06-21_20-51-11', 'DATA_FILE': 'results', 'IMAGE_FILE': 'image'}
