@@ -1,0 +1,17 @@
+
+Temporal MultiFix: 
+test-loss:0.0232+-0.0122
+test-f1-macro:0.9755+-0.0197
+test-f1-micro:0.9974+-0.0018
+test-AP-macro:0.9613+-0.0295
+test-AUC-ROC:0.9850+-0.0121
+
+Temporal MultiFix DW: 
+test-loss:0.0272+-0.0135
+test-f1-macro:0.9684+-0.0238
+test-f1-micro:0.9958+-0.0029
+test-AP-macro:0.9464+-0.0390
+test-AUC-ROC:0.9786+-0.0152
+
+ Dataset Inter Homophily:0.3702
+{'NUM_NODES': 3000, 'NUM_REL_FEATURES': 10, 'NUM_IRR_FEATURES': 10, 'NUM_RED_FEATURES': 0, 'NUM_LABELS': 20, 'NUM_TIMESTEPS': 30, 'EPOCHS': 500, 'LR_MLEGCN': 0.02, 'LR_TMF': 0.008, 'THRESHOLD': 0.5, 'REPEATS': 2, 'ALPHA': 0, 'EMBEDDING_DIM': 16, 'TRAIN_RATIO': 0.6, 'VALIDATION_RATIO': 0.2, 'TEST_RATIO': 0.2, 'FILENAME': '.\\data\\base_graphs', 'BASEFILE': '.\\data\\base_graphs_2025-06-12_02-49-34', 'EXPERIMENT_PATH': '.\\data\\2025-06-23_03-08-54', 'DATA_FILE': 'results', 'IMAGE_FILE': 'image'}
