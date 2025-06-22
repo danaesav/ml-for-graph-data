@@ -9,7 +9,7 @@ from models.NodeEmbedding import NodeEmbedding
 from generator.HyperSpheres import HyperSpheres
 
 class DatasetLoader(object):
-    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim, embedding_method:Literal['Node2Vec', 'DeepWalk', 'Node2Vec Recurrent']='Node2Vec', filename=None, load=None):
+    def __init__(self, config: TemporalMultiLabelGeneratorConfig, embedding_dim, filename=None, load=None, embedding_method:Literal['Node2Vec', 'DeepWalk', 'Node2Vec Recurrent']='Node2Vec'):
 
 
         self.generator = TemporalMultiLabelGenerator(config)

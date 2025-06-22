@@ -16,7 +16,7 @@ NUM_LABELS = 20          # q = number of hyperspheres
 NUM_TIMESTEPS = 15      # horizon
 HIDDEN_DIM = 64
 EPOCHS = 750
-LR = 8*1e-3
+LR = 8e-3
 THRESHOLD = 0.5         # for classification
 EMBEDDING = True
 EMBEDDING_DIM = 64
