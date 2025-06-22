@@ -82,7 +82,8 @@ def initialize_models(param):
     model_tmf_0 = TemporalMultiFix(
         input_dim=param["NUM_REL_FEATURES"] + param["NUM_IRR_FEATURES"] + param["NUM_RED_FEATURES"],
         num_of_nodes=param["NUM_NODES"],
-        output_dim=param["NUM_LABELS"]).to(DEVICE)
+        output_dim=param["NUM_LABELS"],
+        num_label_layers=2).to(DEVICE)
 
     optimizer_tmf_0 = th.optim.Adam(model_tmf_0.parameters(), lr=param["LR_TMF"])
 
@@ -94,13 +95,15 @@ def initialize_models(param):
         input_dim=param["NUM_REL_FEATURES"] + param["NUM_IRR_FEATURES"] + param["NUM_RED_FEATURES"],
         num_of_nodes=param["NUM_NODES"],
         output_dim=param["NUM_LABELS"],
+        dw_dim=param["EMBEDDING_DIM"],
         num_label_layers=2).to(DEVICE)
+
 
     optimizer_tmf_1 = th.optim.Adam(model_tmf_1.parameters(), lr=param["LR_TMF"])
 
     tmf_1 = {'model': model_tmf_1,
           'optimizer': optimizer_tmf_1,
-            'type': "tmf"}
+            'type': "tmf_dw"}
 
 
 
@@ -204,7 +207,7 @@ def experiment(param, datasets, display = True):
     # run singular repeat of experiment on both models with same dataset
     # setup models
     models, loss = initialize_models(param)
-    model_names = ["num. label layers = 10", "num. label layers = 2"]
+    model_names = ["Temporal MultiFix", "Temporal MultiFix DW"]
 
     train_dataset = datasets["train_data"]
     validation_dataset = datasets["validation_data"]
@@ -267,34 +270,34 @@ def plotting(param, results, datasets, zoom = False):
 
         train_loss_mean = np.mean(train_datas_tmf_0[i], axis=0)
         train_loss_std = np.std(train_datas_tmf_0[i], axis=0)
-        plt.plot(x, train_loss_mean, label='num. label layers = 10 (Train)', color='tab:red')
+        plt.plot(x, train_loss_mean, label='Temporal MultiFix (Train)', color='tab:red')
         plt.fill_between(x, train_loss_mean - train_loss_std, train_loss_mean + train_loss_std, color='tab:red', alpha=0.3,
                          label='_nolegend_')
 
         
         train_loss_mean = np.mean(validation_datas_tmf_0[i], axis=0)
         train_loss_std = np.std(validation_datas_tmf_0[i], axis=0)
-        plt.plot(x, train_loss_mean, '--', label='num. label layers = 10 (Val)', color='tab:pink')
+        plt.plot(x, train_loss_mean, '--', label='Temporal MultiFix (Val)', color='tab:pink')
         plt.fill_between(x, train_loss_mean - train_loss_std, train_loss_mean + train_loss_std,
                          color='tab:pink', alpha=0.3, label='_nolegend_')
         
         train_loss_mean = np.mean(train_datas_tmf_1[i], axis=0)
         train_loss_std = np.std(train_datas_tmf_1[i], axis=0)
-        plt.plot(x, train_loss_mean, label='num. label layers = 2 (Train)', color='tab:blue')
+        plt.plot(x, train_loss_mean, label='Temporal MultiFix DW (Train)', color='tab:blue')
         plt.fill_between(x, train_loss_mean - train_loss_std, train_loss_mean + train_loss_std, color='tab:blue', alpha=0.3,
                          label='_nolegend_')
 
         
         train_loss_mean = np.mean(validation_datas_tmf_1[i], axis=0)
         train_loss_std = np.std(validation_datas_tmf_1[i], axis=0)
-        plt.plot(x, train_loss_mean, '--', label='num. label layers = 2 (Val)', color='tab:cyan')
+        plt.plot(x, train_loss_mean, '--', label='Temporal MultiFix DW (Val)', color='tab:cyan')
         plt.fill_between(x, train_loss_mean - train_loss_std, train_loss_mean + train_loss_std,
                          color='tab:cyan', alpha=0.3, label='_nolegend_')
 
 
         plt.xlabel("Epoch")
         plt.ylabel(f"{title} (mean ± std)")
-        plt.title(f'TMF: alpha={param["ALPHA"]}, inter homophily={datasets["inter_homophily"]:.2f}')
+        plt.title(f'alpha={param["ALPHA"]}, inter homophily={datasets["inter_homophily"]:.2f}')
         plt.grid(True)
 
 
@@ -337,7 +340,7 @@ def experiment_main(param):
     
     # alphas = [5, 4, 3, 2, 1, 0]
     # alphas = [6, 7, 8, 9, 10]
-    alphas = [2, 1, 0]
+    alphas = [1, 0]
     for alpha in alphas:
         # experiment 
         param["ALPHA"] = alpha
