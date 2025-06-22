@@ -340,7 +340,7 @@ def experiment_main(param):
     
     # alphas = [5, 4, 3, 2, 1, 0]
     # alphas = [6, 7, 8, 9, 10]
-    alphas = [1, 0]
+    alphas = [0]
     for alpha in alphas:
         # experiment 
         param["ALPHA"] = alpha
