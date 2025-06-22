@@ -1,0 +1,17 @@
+
+num. label layers = 10: 
+test-loss:0.1567+-0.0338
+test-f1-macro:0.7109+-0.0588
+test-f1-micro:0.9475+-0.0151
+test-AP-macro:0.7023+-0.0519
+test-AUC-ROC:0.8346+-0.0333
+
+num. label layers = 2: 
+test-loss:0.0207+-0.0108
+test-f1-macro:0.9889+-0.0100
+test-f1-micro:0.9985+-0.0012
+test-AP-macro:0.9801+-0.0179
+test-AUC-ROC:0.9934+-0.0057
+
+ Dataset Inter Homophily:0.7599
+{'NUM_NODES': 3000, 'NUM_REL_FEATURES': 10, 'NUM_IRR_FEATURES': 10, 'NUM_RED_FEATURES': 0, 'NUM_LABELS': 20, 'NUM_TIMESTEPS': 30, 'EPOCHS': 500, 'LR_MLEGCN': 0.02, 'LR_TMF': 0.008, 'THRESHOLD': 0.5, 'REPEATS': 2, 'ALPHA': 2, 'EMBEDDING_DIM': 16, 'TRAIN_RATIO': 0.6, 'VALIDATION_RATIO': 0.2, 'TEST_RATIO': 0.2, 'FILENAME': '.\\data\\base_graphs', 'BASEFILE': '.\\data\\base_graphs_2025-06-12_02-49-34', 'EXPERIMENT_PATH': '.\\data\\2025-06-22_19-35-49', 'DATA_FILE': 'results', 'IMAGE_FILE': 'image'}

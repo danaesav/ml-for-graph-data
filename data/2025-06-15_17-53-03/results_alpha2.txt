@@ -1,0 +1,24 @@
+
+Temporal MultiFix: 
+test-loss:0.5614+-0.6456
+test-f1-macro:0.6910+-0.0881
+test-f1-micro:0.9141+-0.0662
+test-AP-macro:0.6763+-0.0831
+test-AUC-ROC:0.8166+-0.0620
+
+Temporal MultiFix Deepwalk: 
+test-loss:0.0976+-0.0205
+test-f1-macro:0.7825+-0.0172
+test-f1-micro:0.9541+-0.0086
+test-AP-macro:0.7514+-0.0152
+test-AUC-ROC:0.8683+-0.0125
+
+MultiFix Evolve GCN: 
+test-loss:0.1094+-0.0396
+test-f1-macro:0.7750+-0.0271
+test-f1-micro:0.9508+-0.0174
+test-AP-macro:0.7346+-0.0293
+test-AUC-ROC:0.8609+-0.0219
+
+ Dataset Inter Homophily:0.7601
+{'NUM_NODES': 3000, 'NUM_REL_FEATURES': 10, 'NUM_IRR_FEATURES': 10, 'NUM_RED_FEATURES': 0, 'NUM_LABELS': 20, 'NUM_TIMESTEPS': 30, 'EPOCHS': 500, 'LR_MLEGCN': 0.02, 'LR_TMF': 0.008, 'THRESHOLD': 0.5, 'REPEATS': 5, 'ALPHA': 2, 'EMBEDDING_DIM': 32, 'TRAIN_RATIO': 0.6, 'VALIDATION_RATIO': 0.2, 'TEST_RATIO': 0.2, 'FILENAME': '.\\data\\base_graphs', 'BASEFILE': '.\\data\\base_graphs_2025-06-12_02-49-34', 'EXPERIMENT_PATH': '.\\data\\2025-06-15_17-53-03', 'DATA_FILE': 'results', 'IMAGE_FILE': 'image'}
