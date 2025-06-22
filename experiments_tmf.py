@@ -224,7 +224,7 @@ def experiment(param, datasets, display = True):
 
         aggregated_metrics = ModelResults.aggregate_results(repeat_results)
 
-        results[model[1]["type"]] = aggregated_metrics
+        results[model[0]] = aggregated_metrics
 
         out += (f"\n{name}: \n"
                +str(aggregated_metrics.test_metrics))
@@ -337,8 +337,8 @@ def experiment_main(param):
     
     # alphas = [5, 4, 3, 2, 1, 0]
     # alphas = [6, 7, 8, 9, 10]
-    alphas = [2]
-    for alpha in alphas[::-1]:
+    alphas = [2, 1, 0]
+    for alpha in alphas:
         # experiment 
         param["ALPHA"] = alpha
         dataset_loader.generator.alpha = alpha
